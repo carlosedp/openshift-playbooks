@@ -1,0 +1,149 @@
+# E
+[OSEv3:children]
+masters
+nodes
+etcd
+
+[OSEv3:vars]
+ansible_ssh_user=root
+use_cluster_metrics=true
+
+
+#----------------------------- Service Catalog and Brokers --------------------------------------------------------------------------
+openshift_enable_service_catalog=false
+template_service_broker_install=false
+ansible_service_broker_install=false
+ansible_service_broker_remove=true
+template_service_broker_remove=true
+openshift_service_catalog_remove=true
+
+
+#-----------------------------------  Enable NTP Service --------------------------------------------------------------------------
+openshift_clock_enabled=true
+
+
+#-----------------------------------  Define deploy type --------------------------------------------------------------------------
+openshift_deployment_type=openshift-enterprise
+
+
+#-----------------------------------  Define Openshift version --------------------------------------------------------------------
+openshift_release=v3.11
+openshift_image_tag=v3.11.43
+openshift_pkg_version=-3.11.43
+
+
+#-----------------------------------  Disable pre-install checks ------------------------------------------------------------------
+openshift_disable_check=memory_availability,disk_availability,docker_storage,docker_storage_driver,docker_image_availability,package_version,package_availability,package_update
+
+
+#--------------------------------  Define cluster method and hostname ----------------------------------------------------------
+openshift_master_cluster_method=native
+openshift_master_cluster_hostname=adm-openshift.mydomain.com
+openshift_master_cluster_public_hostname=adm-openshift.mydomain.com
+openshift_master_default_subdomain=ose.mydomain.com
+
+
+#-----------------------------------  Define firewall if iptables or firewallcmd --------------------------------------------------
+os_firewall_use_firewalld=false
+
+
+#----------------------------------- Define DNSMasq use ---------------------------------------------------------------------------
+openshift_use_dnsmasq=true
+openshift_set_node_ip=true
+
+
+#----------------------------------- Define SDN Network ---------------------------------------------------------------------------
+os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
+
+
+#----------------------------------- Define the authentication providers ----------------------------------------------------------
+### LDAP auth provider with IDM
+openshift_master_identity_providers=[{'name': 'ldap_auth', 'challenge': 'true','login': 'true', 'kind': 'LDAPPasswordIdentityProvider', 'attributes': {'id':['dn'], 'email': ['mail'], 'name': ['displayName'], 'preferredUsername': ['uid']}, 'bindDN':'UID=admin,CN=users,CN=accounts,DC=infra,DC=mydomain', 'bindPassword':'secret', 'insecure': 'true', 'url': 'ldap://idm01.mydomain.com:389/cn=users,cn=accounts,dc=infra,dc=mydomain?uid?sub?(objectClass=*)'}]
+
+
+#-----------------------------------  Configure Registry --------------------------------------------------------------------------
+oreg_auth_user=username
+oreg_auth_password=secret
+
+openshift_registry_selector="node-role.kubernetes.io/infra=true"
+openshift_hosted_registry_replicas=2
+
+
+##----------------------------------- vSphere Cloud Provider -----------------------------------------------------------------------
+openshift_cloudprovider_kind=vsphere
+openshift_cloudprovider_vsphere_username="username@mydomain.com"
+openshift_cloudprovider_vsphere_password="secret"
+openshift_cloudprovider_vsphere_host="172.17.10.10"
+openshift_cloudprovider_vsphere_datacenter=MainDC
+openshift_cloudprovider_vsphere_cluster=Cluster-Prod-01
+openshift_cloudprovider_vsphere_datastore=vsanDatastore-Prod
+
+
+##----------------------------------- Configure Metrics ----------------------------------------------------------------------------
+openshift_metrics_install_metrics=true
+openshift_metrics_duration=30
+openshift_metrics_cassandra_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_metrics_hawkular_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_metrics_heapster_nodeselector={"node-role.kubernetes.io/infra":"true"}
+
+##-------------------------------- Configure Metrics Server for HPA--------------------------------------------------------------
+openshift_metrics_server_install=true
+
+
+#----------------------------------- Configure Logging EFK -------------------------------------------------------------------------
+openshift_logging_install_logging=true
+openshift_logging_es_memory_limit=4G
+openshift_logging_curator_default_days=30
+openshift_logging_curator_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_logging_kibana_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_logging_es_nodeselector={"node-role.kubernetes.io/infra":"true"}
+logging_elasticsearch_rollout_override=false
+
+
+#----------------------------------- Configure Prometheus -------------------------------------------------------------------------
+openshift_cluster_monitoring_operator_install=true
+openshift_cluster_monitoring_operator_prometheus_storage_enabled=true
+openshift_cluster_monitoring_operator_alertmanager_storage_enabled=true
+openshift_cluster_monitoring_operator_prometheus_storage_capacity="100Gi"
+openshift_cluster_monitoring_operator_alertmanager_storage_capacity="5Gi"
+openshift_cluster_monitoring_operator_prometheus_storage_class_name=vsphere-standard
+openshift_cluster_monitoring_operator_alertmanager_storage_class_name=vsphere-standard
+openshift_cluster_monitoring_operator_node_selector={"node-role.kubernetes.io/infra":"true"}
+
+
+#-------------------------- Define Proxy Configuration to set in docker config of nodes ------------------------------------
+#openshift_http_proxy='http://proxy.mydomain.com:3128'
+#openshift_https_proxy='https://proxy.mydomain.com:3128'
+#openshift_no_proxy='.mydomain.com'
+
+
+#------------------------- Define Custom Node Groups Labels--------------------------------------------------------------------
+[etcd]
+### ETC Hosts
+ose-master04.mydomain.com
+ose-master05.mydomain.com
+ose-master06.mydomain.com
+
+[masters]
+### Master Servers
+ose-master04.mydomain.com
+ose-master05.mydomain.com
+ose-master06.mydomain.com
+
+[nodes]
+### Master Nodes
+ose-master04.mydomain.com openshift_node_group_name='node-config-master'
+ose-master05.mydomain.com openshift_node_group_name='node-config-master'
+ose-master06.mydomain.com openshift_node_group_name='node-config-master'
+
+### Infra Nodes
+ose-infranode03.mydomain.com openshift_node_group_name='node-config-infra'
+ose-infranode04.mydomain.com openshift_node_group_name='node-config-infra'
+
+### Nodes PRD
+ose-node05.mydomain.com openshift_node_group_name='node-config-compute'
+ose-node06.mydomain.com openshift_node_group_name='node-config-compute'
+ose-node07.mydomain.com openshift_node_group_name='node-config-compute'
+ose-node08.mydomain.com openshift_node_group_name='node-config-compute'
+ose-node09.mydomain.com openshift_node_group_name='node-config-compute'
+ose-node10.mydomain.com openshift_node_group_name='node-config-compute'

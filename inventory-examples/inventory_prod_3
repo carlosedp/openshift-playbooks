@@ -1,0 +1,420 @@
+# S
+[OSEv3:children]
+masters
+nodes
+etcd
+new_masters
+new_etcd
+new_nodes
+glusterfs
+glusterfs_registry
+nfs
+
+[OSEv3:vars]
+debug_level=2
+ansible_user=user01
+ansible_become=yes
+use_cluster_metrics=true
+openshift_enable_unsupported_configurations=True
+
+#-----------------------------------  Enable NTP Service -----------------------------------#
+openshift_clock_enabled=true
+
+#-----------------------------------  Define deploy type -----------------------------------#
+openshift_deployment_type=openshift-enterprise
+
+#-----------------------------------  Define Openshift version -----------------------------------#
+openshift_release=v3.9
+openshift_pkg_version=-3.9.41
+openshift_image_tag=v3.9.41
+
+#-----------------------------------  Disable pre-install checks -----------------------------------#
+#openshift_disable_check=memory_availability,disk_availability,docker_storage,docker_storage_driver,docker_image_availability,package_version,package_availability,package_update
+
+#-----------------------------------  Define cluster method and hostname -----------------------------------#
+openshift_master_cluster_method=native
+openshift_master_default_subdomain=prod.paas.mydomain.com
+openshift_master_cluster_hostname=console.paas.mydomain.com
+openshift_master_cluster_public_hostname=console.paas.mydomain.com
+openshift_master_api_port=8443
+openshift_master_console_port=8443
+
+#-----------------------------------  Define firewall if iptables or firewallcmd -----------------------------------#
+os_firewall_use_firewalld=false
+
+#----------------------------------- Define DNSMasq use -----------------------------------#
+openshift_use_dnsmasq=true
+
+#----------------------------------- Define Openshift Catalog -----------------------------------#
+openshift_enable_service_catalog=true
+template_service_broker_install=false
+ansible_service_broker_install=false
+openshift_service_catalog_image_prefix="registry.mydomain.com:5000/ocp3-openshift3_ose-"
+
+#----------------------------------- Define the SDN plugin -----------------------------------#
+os_sdn_network_plugin_name='redhat/openshift-ovs-networkpolicy'
+
+#----------------------------------- Define SDN Network -----------------------------------#
+osm_cluster_network_cidr=10.76.0.0/14
+openshift_portal_net=10.101.0.0/16
+
+#----------------------------------- Define the authentication providers -----------------------------------#
+### LDAP auth provider
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'},{'name': 'ldap_provider', 'challenge': 'true', 'login': 'true', 'kind': 'LDAPPasswordIdentityProvider', 'attributes': {'id': ['dn'], 'email': ['mail'], 'name': ['cn'], 'preferredUsername': ['sAMAccountName']}, 'bindDN': 'SPLFRY01', 'bindPassword': 'secret', 'insecure': 'true', 'url': 'ldap://172.17.0.22:389/DC=mydc,DC=mydomain,DC=com?sAMAccountName'}]
+
+### htpasswd auth provider
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
+
+#----------------------------------- Define Corporate CA Certificates -----------------------------------#
+#openshift_master_overwrite_named_certificates=true
+openshift_master_named_certificates=[{"certfile": "/etc/pki/openshift/prd/paas.mydomain.com.crt", "keyfile": "/etc/pki/openshift/prd/paas.mydomain.com.key", "cafile": "/etc/pki/openshift/dev-hk/ca-cert.pem", "names": ["console.paas.mydomain.com"]}]
+openshift_hosted_router_certificate={"certfile": "/etc/pki/ocp-certs/produc.paas.mydomain.com.pem", "keyfile": "/etc/pki/ocp-certs/produc.paas.mydomain.com.key.pem", "cafile": "/etc/pki/ocp-certs/ca-chain.cert.pem"}
+
+#----------------------------------- Deploy router instance -----------------------------------#
+openshift_hosted_router_force_subdomain=paas.mydomain.com
+#openshift_hosted_routers=[{'name': 'router-dev', 'certificate': {'certfile': '/etc/pki/openshift/dev-hk/paas.mydomain-dev.com.corp.crt', 'keyfile': '/etc/pki/openshift/dev-hk/paas.mydomain-dev.com.corp.key', 'cafile': '/etc/pki/openshift/dev-hk/ca-cert.pem'}, 'replicas': 3, 'serviceaccount': 'router', 'namespace': 'default', 'stats_port': 1936, 'edits': [{'action': 'append', 'key': 'spec.template.spec.containers[0].env', 'value': {'name': 'NAMESPACE_LABELS', 'value': 'router=dev'}}], 'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}', 'selector': 'type=router,location=dev', 'ports': ['80:80', '443:443']}, {'name': 'router-hk', 'certificate': {'certfile': '/etc/pki/openshift/dev-hk/paas.mydomain.com.crt', 'keyfile': '/etc/pki/openshift/dev-hk/paas.mydomain.com.key', 'cafile': '/etc/pki/openshift/dev-hk/ca-cert.pem'}, 'replicas': 3, 'serviceaccount': 'router', 'namespace': 'default', 'stats_port': 1936, 'edits': [{'action': 'append', 'key': 'spec.template.spec.containers[0].env', 'value': {'name': 'NAMESPACE_LABELS', 'value': 'router=hk'}}], 'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}', 'selector': 'type=router,location=hk', 'ports': ['80:80', '443:443']}, {'name': 'router-common', 'certificate': {'certfile': '/etc/pki/openshift/dev-hk/paas.mydomain.com.crt', 'keyfile': '/etc/pki/openshift/dev-hk/paas.mydomain.com.key', 'cafile': '/etc/pki/openshift/dev-hk/ca-cert.pem'}, 'replicas': 3, 'serviceaccount': 'router', 'namespace': 'default', 'stats_port': 1936, 'edits': [{'action': 'append', 'key': 'spec.template.spec.containers[0].env', 'value': {'name': 'NAMESPACE_LABELS', 'value': 'router=common'}}], 'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}', 'selector': 'type=infra,location=common', 'ports': ['80:80', '443:443']}]
+
+openshift_hosted_routers = [{
+            'name': 'router-site1',
+            'certificate': {
+                'certfile': '/etc/pki/openshift/prd/site1/paas.mydomain-dev.com.corp.crt',
+                'keyfile': '/etc/pki/openshift/prd/site1/paas.mydomain-dev.com.corp.key',
+                'cafile': '/etc/pki/openshift/prd/site1/ca-cert.pem'
+            },
+            'replicas': 3,
+            'serviceaccount': 'router',
+            'namespace': 'default',
+            'stats_port': 1936,
+            'edits': [{
+                'action': 'append',
+                'key': 'spec.template.spec.containers[0].env',
+                'value': {
+                    'name': 'NAMESPACE_LABELS',
+                    'value': 'router=site1'
+                }
+            }],
+            'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}',
+            'selector': 'type=router,location=site1',
+            'ports': ['80:80', '443:443']
+        },
+        [{
+                'name': 'router-front',
+                'certificate': {
+                    'certfile': '/etc/pki/openshift/prd/front/paas.mydomain-dev.com.corp.crt',
+                    'keyfile': '/etc/pki/openshift/prd/front/paas.mydomain-dev.com.corp.key',
+                    'cafile': '/etc/pki/openshift/prd/front/ca-cert.pem'
+                },
+                'replicas': 3,
+                'serviceaccount': 'router',
+                'namespace': 'default',
+                'stats_port': 1936,
+                'edits': [{
+                    'action': 'append',
+                    'key': 'spec.template.spec.containers[0].env',
+                    'value': {
+                        'name': 'NAMESPACE_LABELS',
+                        'value': 'router=front'
+                    }
+                }],
+                'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}',
+                'selector': 'type=router,location=front',
+                'ports': ['80:80', '443:443']
+            },
+            [{
+                    'name': 'router-public',
+                    'certificate': {
+                        'certfile': '/etc/pki/openshift/prd/public/paas.mydomain-dev.com.corp.crt',
+                        'keyfile': '/etc/pki/openshift/prd/public/paas.mydomain-dev.com.corp.key',
+                        'cafile': '/etc/pki/openshift/prd/public/ca-cert.pem'
+                    },
+                    'replicas': 3,
+                    'serviceaccount': 'router',
+                    'namespace': 'default',
+                    'stats_port': 1936,
+                    'edits': [{
+                        'action': 'append',
+                        'key': 'spec.template.spec.containers[0].env',
+                        'value': {
+                            'name': 'NAMESPACE_LABELS',
+                            'value': 'router=public'
+                        }
+                    }],
+                    'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}',
+                    'selector': 'type=router,location=public',
+                    'ports': ['80:80', '443:443']
+                },
+                [{
+                    'name': 'router-site2',
+                    'certificate': {
+                        'certfile': '/etc/pki/openshift/prd/site2/paas.mydomain-dev.com.corp.crt',
+                        'keyfile': '/etc/pki/openshift/prd/site2/paas.mydomain-dev.com.corp.key',
+                        'cafile': '/etc/pki/openshift/prd/site2/ca-cert.pem'
+                    },
+                    'replicas': 3,
+                    'serviceaccount': 'router',
+                    'namespace': 'default',
+                    'stats_port': 1936,
+                    'edits': [{
+                        'action': 'append',
+                        'key': 'spec.template.spec.containers[0].env',
+                        'value': {
+                            'name': 'NAMESPACE_LABELS',
+                            'value': 'router=site2'
+                        }
+                    }],
+                    'images': 'registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}',
+                    'selector': 'type=router,location=site2',
+                    'ports': ['80:80', '443:443']
+                }]
+
+#----------------------------------- Configure validity of certificates -----------------------------------#
+openshift_hosted_registry_cert_expire_days=730
+openshift_ca_cert_expire_days=1875
+openshift_node_cert_expire_days=730
+openshift_master_cert_expire_days=730
+etcd_ca_default_days=1875
+
+#-----------------------------------  Define default project node selector -----------------------------------#
+#osm_default_node_selector='type=app,location=dev'
+
+#-----------------------------------  API and Controller Arguments -----------------------------------## Configure controller arguments
+osm_api_server_args={'feature-gates': ['ReadOnlyAPIDataVolumes=false','PersistentLocalVolumes=true']}
+osm_controller_args={'feature-gates': ['ReadOnlyAPIDataVolumes=false','PersistentLocalVolumes=true']}
+openshift_node_kubelet_args={'feature-gates': ['ReadOnlyAPIDataVolumes=false','PersistentLocalVolumes=true'],'pods-per-core': ['18'], 'max-pods': ['350'], 'image-gc-high-threshold': ['90'], 'image-gc-low-threshold': ['80']}
+
+#-----------------------------------  Others -----------------------------------#
+openshift_hostname_check=true
+openshift_examples_modify_imagestreams=true
+oreg_url=registry.mydomain.com:5000/ocp3-openshift3_ose-${component}:${version}
+#openshift_builddefaults_nodeselectors={'type':'infra'}
+osm_use_cockpit=true
+openshift_web_console_prefix=registry.mydomain.com:5000/ocp3-openshift3_ose-
+
+#-----------------------------------  Configure Registry -----------------------------------#
+openshift_cockpit_deployer_prefix=registry.mydomain.com:5000/ocp3-openshift3_
+openshift_cockpit_deployer_basename=registry-console
+openshift_cockpit_deployer_version=v3.9.40
+openshift_registry_selector='type=infra,location=common'
+openshift_hosted_registry_replicas=3
+openshift_hosted_registry_storage_kind=nfs
+openshift_hosted_registry_storage_access_modes=['ReadWriteMany']
+#openshift_hosted_registry_storage_host=storage.mydomain.com
+openshift_hosted_registry_storage_nfs_directory=/exports
+openshift_hosted_registry_storage_volume_name=registry
+#openshift_hosted_registry_storage_volume_size=100Gi
+
+##----------------------------------- Configure Metrics -----------------------------------#
+openshift_metrics_install_metrics=true
+openshift_metrics_image_prefix=registry.mydomain.com:5000/ocp3-openshift3_
+openshift_metrics_duration=60
+openshift_metrics_cassandra_storage_type=dynamic
+openshift_metrics_hawkular_hostname=metrics.paas.mydomain.com
+openshift_metrics_cassandra_nodeselector={"type": "infra","location": "front","app": "metrics"}
+openshift_metrics_hawkular_nodeselector={"type": "infra","location": "front","app": "metrics"}
+openshift_metrics_heapster_nodeselector={"type": "infra","location": "front","app": "metrics"}
+
+#----------------------------------- Configure Logging EFK -----------------------------------#
+openshift_logging_install_logging=true
+openshift_logging_image_prefix=registry.mydomain.com:5000/ocp3-openshift3_
+#openshift_logging_es_pvc_dynamic=true
+openshift_logging_kibana_hostname=logging.paas.mydomain.com
+openshift_logging_curator_default_days=90
+openshift_logging_curator_nodeselector={"type": "infra","location": "front","app": "logging"}
+openshift_logging_kibana_nodeselector={"type": "infra","location": "front","app": "logging"}
+openshift_logging_es_nodeselector={"type": "infra","location": "front","app": "logging"}
+
+#----------------------------------- Configure Logging EFK OPS -----------------------------------#
+openshift_logging_use_ops=true
+openshift_logging_ops_image_prefix=registry.mydomain.com:5000/ocp3-openshift3_
+openshift_logging_es_ops_pvc_dynamic=true
+openshift_logging_kibana_ops_hostname=logging-ops.paas.mydomain.com
+openshift_logging_curator_ops_default_days=90
+openshift_logging_curator_ops_nodeselector={"type": "infra","location": "front","app": "logging-ops"}
+openshift_logging_kibana_ops_nodeselector={"type": "infra","location": "front","app": "logging-ops"}
+openshift_logging_es_ops_nodeselector={"type": "infra","location": "front","app": "logging-ops"}
+
+#----------------------------------- Configure Prometheus -----------------------------------#
+openshift_prometheus_image_prefix=registry.mydomain.com:5000/ocp3-openshift3_
+openshift_hosted_prometheus_deploy=true
+openshift_prometheus_storage_type=dynamic
+openshift_prometheus_node_selector={"type": "infra","location": "public","app": "prometheus"}
+
+#----------------------------------- Configure Grafana -----------------------------------#
+openshift_prometheus_image_prefix=registry.mydomain.com:5000/ocp3-openshift3_
+openshift_grafana_image_prefix='registry.mydomain.com'
+openshift_grafana_proxy_image_prefix='grafana/'
+openshift_grafana_image=grafana-ocp
+openshift_grafana_image_version=latest
+openshift_grafana_proxy_image_version=v3.9.40
+openshift_hosted_grafana_deploy=true
+grafana_namespace=openshift-grafana
+grafana_user=grafana
+grafana_paasword=grafana
+grafana_datasource_name=prometheus
+grafana_prometheus_namespace=openshift-metrics
+openshift_grafana_prometheus_serviceaccount=prometheus
+openshift_grafana_hostname=grafana.paas.mydomain.com
+grafana_node_exporter=false
+grafana_graph_granularity="1m"
+openshift_grafana_storage_type=pvc
+openshift_grafana_pvc_access_modes=ReadWriteMany
+openshift_grafana_pvc_name=grafana-data
+openshift_grafana_pvc_size=1GB
+openshift_grafana_node_selector={"type": "infra","location": "public","app": "grafana"}
+
+#----------------------------------- Hosts Session -----------------------------------#
+[nfs]
+nfsserver01.mydomain.com
+nfsserver02.mydomain.com
+nfsserver03.mydomain.com
+
+[masters]
+# MASTER site1
+master01.mydomain.com openshift_node_labels="{'type': 'master', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=master01.mydomain.com openshift_ip=172.18.2.23 openshift_public_ip=172.18.2.23
+master02.mydomain.com openshift_node_labels="{'type': 'master', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=master02.mydomain.com openshift_ip=172.18.2.25 openshift_public_ip=172.18.2.25
+
+# MASTER public
+master03.mydomain.com openshift_node_labels="{'type': 'master', 'region': 'region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=master03.mydomain.com openshift_ip=172.18.3.34 openshift_public_ip=172.18.3.34
+master04.mydomain.com openshift_node_labels="{'type': 'master', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=master04.mydomain.com openshift_ip=172.18.3.36 openshift_public_ip=172.18.3.36
+
+# MASTER FRONT
+master05.mydomain.com openshift_node_labels="{'type': 'master', 'region': 'should', 'location': 'front', 'kind': 'vm'}" openshift_hostname=master05.mydomain.com openshift_ip=172.18.4.11 openshift_public_ip=172.18.4.11
+
+------------------------------------------------------------------------------------------------------
+
+[etcd]
+# ETCD site1
+etcd01.mydomain.com openshift_node_labels="{'type': 'etcd', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=etcd01.mydomain.com openshift_ip=172.18.2.24 openshift_public_ip=172.18.2.24
+etcd02.mydomain.com openshift_node_labels="{'type': 'etcd', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=etcd02.mydomain.com openshift_ip=172.18.2.26 openshift_public_ip=172.18.2.26
+
+# ETCD public
+etcd03.mydomain.com openshift_node_labels="{'type': 'etcd', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=etcd03.mydomain.com openshift_ip=172.18.3.35 openshift_public_ip=172.18.3.35
+etcd04.mydomain.com openshift_node_labels="{'type': 'etcd', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=etcd04.mydomain.com openshift_ip=172.18.3.37 openshift_public_ip=172.18.3.37
+
+# ETCD FRONT
+etcd05.mydomain.com openshift_node_labels="{'type': 'etcd', 'region': 'should', 'location': 'front', 'kind': 'vm'}" openshift_hostname=etcd05.mydomain.com openshift_ip=172.18.4.12 openshift_public_ip=172.18.4.12
+
+------------------------------------------------------------------------------------------------------
+
+[nodes]
+# ROUTER site1
+router01.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router01.mydomain.com openshift_ip=172.18.2.11 openshift_public_ip=172.18.2.11
+router02.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router02.mydomain.com openshift_ip=172.18.2.12 openshift_public_ip=172.18.2.12
+router03.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router03.mydomain.com openshift_ip=172.18.2.13 openshift_public_ip=172.18.2.13
+router04.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router_public_site2-004.mydomain.com openshift_ip=172.18.2.14 openshift_public_ip=172.18.2.14
+router05.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router05.mydomain.com  openshift_ip=172.18.2.15 openshift_public_ip=172.18.2.15
+router06.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router06.mydomain.com openshift_ip=172.18.2.16 openshift_public_ip=172.18.2.16
+router07.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router07.mydomain.com openshift_ip=172.18.2.17 openshift_public_ip=172.18.2.17
+router08.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router08.mydomain.com openshift_ip=172.18.2.18 openshift_public_ip=172.18.2.18
+router09.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router09.mydomain.com openshift_ip=172.18.2.19 openshift_public_ip=172.18.2.19
+router10.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router10.mydomain.com openshift_ip=172.18.2.20 openshift_public_ip=172.18.2.20
+router11.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router11.mydomain.com openshift_ip=172.18.2.21 openshift_public_ip=172.18.2.21
+router12.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site1', 'kind': 'vm'}" openshift_hostname=router12.mydomain.com openshift_ip=172.18.2.22 openshift_public_ip=172.18.2.22
+
+# ROUTER public
+router_public-001.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public-001.mydomain.com openshift_ip=172.18.3.38 openshift_public_ip=172.18.3.38
+router_public-002.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public-002.mydomain.com openshift_ip=172.18.3.39 openshift_public_ip=172.18.3.39
+router_public-003.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public-003.mydomain.com openshift_ip=172.18.3.40 openshift_public_ip=172.18.3.40
+router_public-004.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public-004.mydomain.com openshift_ip=172.18.3.41 openshift_public_ip=172.18.3.41
+router_public-005.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public-005.mydomain.com openshift_ip=172.18.3.42 openshift_public_ip=172.18.3.42
+router_public-006.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public-006.mydomain.com openshift_ip=172.18.3.43 openshift_public_ip=172.18.3.43
+router_public_site2-007.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-007.mydomain.com openshift_ip=172.18.3.44 openshift_public_ip=172.18.3.44
+router_public_site2-008.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-008.mydomain.com openshift_ip=172.18.3.45 openshift_public_ip=172.18.3.45
+router_public_site2-009.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-009.mydomain.com openshift_ip=172.18.3.46 openshift_public_ip=172.18.3.46
+router_public_site2-010.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-010.mydomain.com openshift_ip=172.18.3.47 openshift_public_ip=172.18.3.47
+router_public_site2-011.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-011.mydomain.com openshift_ip=172.18.3.48 openshift_public_ip=172.18.3.48
+router_public_site2-012.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-012.mydomain.com openshift_ip=172.18.3.49 openshift_public_ip=172.18.3.49
+
+# ROUTER FRONT SANTANDER
+router-front-n001.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n001.mydomain.com openshift_ip=172.18.4.13 openshift_public_ip=172.18.4.13
+router-front-n002.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n002.mydomain.com openshift_ip=172.18.4.14 openshift_public_ip=172.18.4.14
+router-front-n003.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n003.mydomain.com openshift_ip=172.18.4.15 openshift_public_ip=172.18.4.15
+router-front-n004.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n004.mydomain.com openshift_ip=172.18.4.16 openshift_public_ip=172.18.4.16
+router-front-n005.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n005.mydomain.com openshift_ip=172.18.4.17 openshift_public_ip=172.18.4.17
+router-front-n006.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n006.mydomain.com openshift_ip=172.18.4.18 openshift_public_ip=172.18.4.18
+router-front-s007.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n007.mydomain.com openshift_ip=172.18.4.19 openshift_public_ip=172.18.4.19
+router-front-s008.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n008.mydomain.com openshift_ip=172.18.4.20 openshift_public_ip=172.18.4.20
+router-front-s009.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n009.mydomain.com openshift_ip=172.18.4.21 openshift_public_ip=172.18.4.21
+router-front-s010.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n010.mydomain.com openshift_ip=172.18.4.22 openshift_public_ip=172.18.4.22
+router-front-s011.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n011.mydomain.com openshift_ip=172.18.4.23 openshift_public_ip=172.18.4.23
+router-front-s012.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n012.mydomain.com openshift_ip=172.18.4.24 openshift_public_ip=172.18.4.24
+
+# ROUTER Location Site2
+router-site2-rn001.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rn001.mydomain.com openshift_ip=172.18.6.11 openshift_public_ip=172.18.6.11
+router-site2-rn002.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rn002.mydomain.com openshift_ip=172.18.6.12 openshift_public_ip=172.18.6.12
+router-site2-rn003.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rn003.mydomain.com openshift_ip=172.18.6.13 openshift_public_ip=172.18.6.13
+router-site2-rn004.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rn004.mydomain.com openshift_ip=172.18.6.14 openshift_public_ip=172.18.6.14
+router-site2-rn005.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rn005.mydomain.com openshift_ip=172.18.6.15 openshift_public_ip=172.18.6.15
+router-site2-rn006.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rn006.mydomain.com openshift_ip=172.18.6.16 openshift_public_ip=172.18.6.16
+router-site2-rs007.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rs007.mydomain.com openshift_ip=172.18.6.17 openshift_public_ip=172.18.6.17
+router-site2-rs008.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rs008.mydomain.com openshift_ip=172.18.6.18 openshift_public_ip=172.18.6.18
+router-site2-rs009.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rs009.mydomain.com openshift_ip=172.18.6.19 openshift_public_ip=172.18.6.19
+router-site2-rs010.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rs010.mydomain.com openshift_ip=172.18.6.20 openshift_public_ip=172.18.6.20
+router-site2-rs011.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rs011.mydomain.com openshift_ip=172.18.6.21 openshift_public_ip=172.18.6.21
+router-site2-rs012.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'site2', 'kind': 'vm'}" openshift_hostname=router-site2-rs012.mydomain.com openshift_ip=172.18.6.22 openshift_public_ip=172.18.6.22
+
+
+# COMMON SERVICES - EFK / REGISTRY / METRICS
+# INFRA FRONT
+infra-node-svc-1.mydomain.com openshift_node_labels="{'type': 'infra', 'region': 'should', 'location': 'front', 'kind': 'vm'}" openshift_hostname=infra-node-svc-1.mydomain.com openshift_ip=172.18.4.26 openshift_public_ip=172.18.4.26
+infra-node-svc-2.mydomain.com openshift_node_labels="{'type': 'infra', 'region': 'should', 'location': 'front', 'kind': 'vm'}" openshift_hostname=infra-node-svc-2.mydomain.com openshift_ip=172.18.4.27 openshift_public_ip=172.18.4.27
+infra-node-svc-3.mydomain.com openshift_node_labels="{'type': 'infra', 'region': 'should', 'location': 'front', 'kind': 'vm'}" openshift_hostname=infra-node-svc-3.mydomain.com openshift_ip=172.18.4.28 openshift_public_ip=172.18.4.28
+
+# INFRA public
+infra-node-public-1.mydomain.com openshift_node_labels="{'type': 'infra', 'region': 'should', 'location': 'public', 'kind': 'vm'}" openshift_hostname=infra-node-public-1.mydomain.com openshift_ip=172.18.3.48 openshift_public_ip=172.18.3.48
+infra-node-public-2.mydomain.com openshift_node_labels="{'type': 'infra', 'region': 'should', 'location': 'public', 'kind': 'vm'}" openshift_hostname=infra-node-public-2.mydomain.com openshift_ip=172.18.3.49 openshift_public_ip=172.18.3.49
+infra-node-public-3.mydomain.com openshift_node_labels="{'type': 'infra', 'region': 'should', 'location': 'public', 'kind': 'vm'}" openshift_hostname=infra-node-public-3.mydomain.com openshift_ip=172.18.3.50 openshift_public_ip=172.18.3.50
+
+# APP public
+app-nodes-public-01.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-01.mydomain.com openshift_ip=172.18.3.11 openshift_public_ip=172.18.3.11
+app-nodes-public-02.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-02.mydomain.com openshift_ip=172.18.3.12 openshift_public_ip=172.18.3.12
+app-nodes-public-03.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-03.mydomain.com openshift_ip=172.18.3.13 openshift_public_ip=172.18.3.13
+app-nodes-public-04.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-04.mydomain.com openshift_ip=172.18.3.14 openshift_public_ip=172.18.3.14
+app-nodes-public-09.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-09.mydomain.com openshift_ip=172.18.3.15 openshift_public_ip=172.18.3.15
+app-nodes-public-10.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-10.mydomain.com openshift_ip=172.18.3.16 openshift_public_ip=172.18.3.16
+app-nodes-public-11.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-11.mydomain.com openshift_ip=172.18.3.17 openshift_public_ip=172.18.3.17
+app-nodes-public-12.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-12.mydomain.com openshift_ip=172.18.3.18 openshift_public_ip=172.18.3.18
+app-nodes-public-13.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-13.mydomain.com openshift_ip=172.18.3.19 openshift_public_ip=172.18.3.19
+app-nodes-public-14.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-14.mydomain.com openshift_ip=172.18.3.20 openshift_public_ip=172.18.3.20
+app-nodes-public-r2-05.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-05.mydomain.com openshift_ip=172.18.3.21 openshift_public_ip=172.18.3.21
+app-nodes-public-r2-06.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-06.mydomain.com openshift_ip=172.18.3.22 openshift_public_ip=172.18.3.22
+app-nodes-public-r2-07.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-07.mydomain.com openshift_ip=172.18.3.23 openshift_public_ip=172.18.3.23
+app-nodes-public-r2-08.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-08.mydomain.com openshift_ip=172.18.3.24 openshift_public_ip=172.18.3.24
+app-nodes-public-r2-15.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-15.mydomain.com openshift_ip=172.18.3.25 openshift_public_ip=172.18.3.25
+app-nodes-public-r2-16.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-16.mydomain.com openshift_ip=172.18.3.26 openshift_public_ip=172.18.3.26
+app-nodes-public-r2-17.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-17.mydomain.com openshift_ip=172.18.3.27 openshift_public_ip=172.18.3.27
+app-nodes-public-r2-18.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-18.mydomain.com openshift_ip=172.18.3.28 openshift_public_ip=172.18.3.28
+app-nodes-public-r2-19.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-19.mydomain.com openshift_ip=172.18.3.29 openshift_public_ip=172.18.3.29
+app-nodes-public-r2-20.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'public', 'kind': 'apps'}" openshift_hostname=app-nodes-public-r2-20.mydomain.com openshift_ip=172.18.3.30 openshift_public_ip=172.18.3.30
+
+# APP site1
+app-node-site1-n001.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'site1', 'kind': 'apps'}" openshift_hostname=app-node-site1-n001.mydomain.com openshift_ip=172.17.36.117 openshift_public_ip=172.17.36.117
+app-node-site1-n002.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'site1', 'kind': 'apps'}" openshift_hostname=app-node-site1-n002.mydomain.com openshift_ip=172.17.36.118 openshift_public_ip=172.17.36.118
+app-node-site1-s004.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'site1', 'kind': 'apps'}" openshift_hostname=app-node-site1-n004.mydomain.com openshift_ip=172.17.36.120 openshift_public_ip=172.17.36.120
+app-node-site1-s005.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'site1', 'kind': 'apps'}" openshift_hostname=app-node-site1-n005.mydomain.com openshift_ip=172.17.36.121 openshift_public_ip=172.17.36.121
+
+# APP FRONT
+app-nodes-front-n001.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n001.mydomain.com openshift_ip=172.17.37.61 openshift_public_ip=172.17.37.61
+app-nodes-front-n002.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n002.mydomain.com openshift_ip=172.17.37.62 openshift_public_ip=172.17.37.62
+app-nodes-front-n003.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n003.mydomain.com openshift_ip=172.17.37.63 openshift_public_ip=172.17.37.63
+app-nodes-front-n004.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n004.mydomain.com openshift_ip=172.17.37.64 openshift_public_ip=172.17.37.64
+app-nodes-front-s005.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n005.mydomain.com openshift_ip=172.17.37.65 openshift_public_ip=172.17.37.65
+app-nodes-front-s006.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n006.mydomain.com openshift_ip=172.17.37.66 openshift_public_ip=172.17.37.66
+app-nodes-front-s007.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n007.mydomain.com openshift_ip=172.17.37.67 openshift_public_ip=172.17.37.67
+app-nodes-front-s008.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'front', 'kind': 'apps'}" openshift_hostname=app-nodes-front-n008.mydomain.com openshift_ip=172.17.37.68 openshift_public_ip=172.17.37.68
+
+# APP Site2
+app-nodes-site2-n001.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'site2', 'kind': 'apps'}" openshift_hostname=app-nodes-site2-n001.mydomain.com openshift_ip=172.17.39.7 openshift_public_ip=172.17.39.7
+app-nodes-site2-n002.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region1', 'location': 'site2', 'kind': 'apps'}" openshift_hostname=app-nodes-site2-n002.mydomain.com openshift_ip=172.17.39.8 openshift_public_ip=172.17.39.8
+app-nodes-site2-s003.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'site2', 'kind': 'apps'}" openshift_hostname=app-nodes-site2-n003.mydomain.com openshift_ip=172.17.39.9 openshift_public_ip=172.17.39.9
+app-nodes-site2-s004.mydomain.com openshift_node_labels="{'type': 'app', 'region': ' region2', 'location': 'site2', 'kind': 'apps'}" openshift_hostname=app-nodes-site2-n004.mydomain.com openshift_ip=172.17.39.10 openshift_public_ip=172.17.39.10
+
+[nodes:children]
+masters
+etcd
+
+[glusterfs]
+[glusterfs_registry]
+[new_masters]
+[new_etcd]
+[new_nodes]

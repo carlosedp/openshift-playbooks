@@ -1,0 +1,191 @@
+# O
+[OSEv3:children]
+masters
+nodes
+etcd
+new_masters
+new_nodes
+
+[OSEv3:vars]
+ansible_ssh_user=root
+ansible_become=yes
+openshift_deployment_type=openshift-enterprise
+use_cluster_metrics=true
+openshift_master_dynamic_provisioning_enabled=True
+
+# Disable Checks
+openshift_disable_check=memory_availability,disk_availability,docker_storage,docker_storage_driver,docker_image_availability,package_version,package_availability,package_update
+#openshift_disable_check=docker_image_availability,disk_availability
+
+### Alterado para 3.11 - Inicio ###
+openshift_release=v3.11
+openshift_pkg_version=-3.11.43
+openshift_image_tag=v3.11.43
+
+# Upgrade Docker
+docker_upgrade=False
+
+# vSphere Storage Block Options
+openshift_cloudprovider_kind=vsphere
+openshift_cloudprovider_vsphere_username="svc_openshift@mydomain.com"
+openshift_cloudprovider_vsphere_password="secret"
+openshift_cloudprovider_vsphere_host=vcenter.mydomain.com
+openshift_cloudprovider_vsphere_datacenter="MAIN"
+openshift_cloudprovider_vsphere_datastore="DS01-DT-OPENSHIFT01"
+
+# Enable NTP
+openshift_clock_enabled=true
+
+# Define the authentication providers
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
+openshift_master_htpasswd_users={'admin': 'redhat123'}
+
+# balancer is present.
+openshift_master_cluster_method=native
+openshift_master_cluster_hostname=openshift.mydomain.com
+openshift_master_cluster_public_hostname=openshift.mydomain.com
+openshift_master_default_subdomain=openshift.mydomain.com
+openshift_master_api_port=8443
+openshift_master_console_port=8443
+
+# Cluster Admin Console
+openshift_console_install=true
+openshift_console_hostname=openshift.mydomain.com
+#openshift_console_cert="/root/openshift/certs/prod/console/openshift.mydomain.com.crt"
+#openshift_console_key="/root/openshift/certs/prod/console/openshift.mydomain.com.key"
+#openshift_console_ca="/root/openshift/certs/prod/console/ca.crt"
+
+# Operator Lifecycle Manager (TechPreview)
+openshift_enable_olm=false
+
+# Define firewall if iptables or firewallcmd
+os_firewall_use_firewalld=false
+openshift_node_iptables_sync_period=5s
+
+# Define DNSMasq use
+openshift_use_dnsmasq=true
+
+# Define Openshift Catalog
+openshift_enable_service_catalog=true
+template_service_broker_install=false
+ansible_service_broker_install=false
+openshift_service_catalog_image_version="v3.11.43"
+
+# Define the SDN plugin
+os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
+
+# Define SDN Network
+osm_cluster_network_cidr=10.104.0.0/14
+openshift_portal_net=172.21.0.0/16
+
+# Defining strategic routing
+openshift_router_selector="region=infra"
+openshift_registry_selector="region=infra"
+
+# Define Corporate CA Certificates
+#openshift_master_overwrite_named_certificates=true
+#openshift_master_named_certificates=[{"certfile": "/root/openshift/certs/prod/console/openshift.mydomain.com.crt", "keyfile": "/root/openshift/certs/prod/console/openshift.mydomain.com.key", "cafile": "/root/openshift/certs/prod/console/ca.crt", "names": ["openshift.mydomain.com"]}]
+
+# Define Router Certificates
+#openshift_hosted_routers=[{'name': 'router', 'certificate': {'certfile': '/root/openshift/certs/prod/router/wildcard.cppr.mydomain.com.crt', 'keyfile': '/root/openshift/certs/prod/router/cppr.mydomain.com.key', 'cafile': '/root/openshift/certs/prod/router/ca.crt'}, 'replicas': 2, 'serviceaccount': 'router', 'namespace': 'default', 'stats_port': 1936, 'edits': [{'action': 'append', 'key': 'spec.template.spec.containers[0].env', 'value': {'name': 'NAMESPACE_LABELS', 'value': 'router'}}], 'selector': 'region=infra', 'ports': ['80:80', '443:443']}]
+
+# Configure validity of certificates
+#openshift_hosted_registry_cert_expire_days=730
+#openshift_ca_cert_expire_days=1875
+#openshift_node_cert_expire_days=730
+#openshift_master_cert_expire_days=730
+#etcd_ca_default_days=1875
+
+# Define default project node selector
+osm_default_node_selector='region=apps'
+
+# API and Controller Arguments and Configure controller arguments
+#osm_api_server_args={'feature-gates': ['ReadOnlyAPIDataVolumes=false','PersistentLocalVolumes=true']}
+#osm_controller_args={'feature-gates': ['ReadOnlyAPIDataVolumes=false','PersistentLocalVolumes=true']}
+#openshift_node_kubelet_args={'feature-gates': ['ReadOnlyAPIDataVolumes=false','PersistentLocalVolumes=true'],'pods-per-core': ['10'], 'max-pods': ['250'], 'image-gc-high-threshold': ['90'], 'image-gc-low-threshold': ['80']}
+
+# Others
+openshift_set_node_ip=True
+#openshift_hostname_check=False
+openshift_examples_modify_imagestreams=true
+osm_use_cockpit=true
+
+# Redhat Information Login
+oreg_auth_user=username
+oreg_auth_password="secret"
+oreg_url="registry.redhat.io/openshift3/ose-${component}:${version}"
+
+# Integrated Registry
+openshift_hosted_registry_selector="region=infra"
+openshift_hosted_registry_replicas=2
+
+# Node kubeletArguments config
+#openshift_hostname_kubelet_args={'image-gc-high-threshold': ['80'], 'image-gc-low-threshold': ['60'], 'kube-reserved': ['cpu=300m', 'memory=300M'], 'system-reserved': ['cpu=200m', 'memory=200M']}
+
+# Scheduling labels
+openshift_node_groups=[{'name': 'node-config-master', 'labels': ['node-role.kubernetes.io/master=true']}, {'name': 'node-config-infra', 'labels': ['node-role.kubernetes.io/infra=true','region=infra']}, {'name': 'node-config-compute', 'labels': ['node-role.kubernetes.io/compute=true','region=apps']}]
+
+# Define Proxy Configuration to set in docker config of nodes
+#openshift_http_proxy='http://proxy.mydomain.com:3128'
+#openshift_https_proxy='http://proxy.mydomain.com:3128'
+openshift_no_proxy='172.17.0.0/16'
+openshift_generate_no_proxy_hosts=True
+
+# Configure Registry
+openshift_cockpit_deployer_basename=registry-console
+openshift_cockpit_deployer_version=v3.11.43
+openshift_registry_selector='region=infra'
+openshift_hosted_registry_replicas=1
+#openshift_hosted_registry_storage_kind=nfs
+#openshift_hosted_registry_storage_access_modes=['ReadWriteMany']
+#openshift_hosted_registry_storage_nfs_directory=/exports
+#openshift_hosted_registry_storage_volume_name=registry
+#openshift_hosted_registry_storage_volume_size=50Gi
+
+# Metrics deployment
+openshift_metrics_install_metrics=true
+openshift_metrics_duration=60
+#openshift_metrics_cassandra_storage_type=dynamic
+#openshift_metrics_cassandra_pvc_prefix=pvc-metrics-cassandra
+#openshift_metrics_cassandra_pvc_size=100Gi
+#openshift_metrics_cassandra_storage_group="vsphere"
+#openshift_metrics_cassandra_storage_class_name="vsphere"
+openshift_metrics_hawkular_hostname=metrics.openshift.mydomain.com
+openshift_metrics_cassandra_nodeselector={"region": "infra"}
+openshift_metrics_hawkular_nodeselector={"region": "infra"}
+openshift_metrics_heapster_nodeselector={"region": "infra"}
+
+# Aggregating Logging
+openshift_logging_install_logging=true
+openshift_logging_es_pvc_dynamic=true
+openshift_logging_storage_kind=dynamic
+#openshift_logging_es_ops_pvc_storage_class_name="vsphere"
+#openshift_logging_es_storage_group="vsphere"
+openshift_logging_es_pvc_prefix=logging-es
+#openshift_logging_es_pvc_size=200Gi
+openshift_logging_kibana_hostname=kibana.openshift.mydomain.com
+openshift_logging_curator_default_days=90
+openshift_logging_curator_nodeselector={"region": "infra"}
+openshift_logging_kibana_nodeselector={"region": "infra"}
+openshift_logging_es_nodeselector={"region": "infra"}
+
+# host group for masters
+[masters]
+server1.mydomain.com
+server2.mydomain.com
+server3.mydomain.com
+
+# host group for etcd
+[etcd]
+server1.mydomain.com
+server2.mydomain.com
+server3.mydomain.com
+
+# host group for nodes, includes region info
+[nodes]
+server[01:03].mydomain.com openshift_node_group_name='node-config-master'
+appserver[01:03].mydomain.com openshift_node_group_name='node-config-compute'
+infraserver[01:02].mydomain.com openshift_node_group_name='node-config-infra'
+
+[new_masters]
+[new_nodes]
