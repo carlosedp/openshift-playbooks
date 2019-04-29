@@ -32,6 +32,12 @@ Each LB instance is configured in a structure like:
 
 Running the playbook is a matter of: `ansible-playbook F5-loadbalancer.yml`.
 
+After running, the instances are created:
+
+![pools](/F5-load-balancer/img/img1.jpeg)
+![vip](/F5-load-balancer/img/img2.jpeg)
+![monitor](/F5-load-balancer/img/img3.jpeg)
+
 ## Manual configuration
 
 ### Master LB

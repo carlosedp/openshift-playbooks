@@ -18,7 +18,7 @@
       # Setup F5 Big-IP connection parameters
       server: '192.168.15.188'
       user: 'admin'
-      password: 'adminpassword'
+      password: 'AdminPwd01!'
       server_port: 443
       validate_certs: no
     lb_instances: [
