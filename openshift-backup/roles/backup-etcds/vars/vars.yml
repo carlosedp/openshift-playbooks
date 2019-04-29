@@ -1,0 +1,12 @@
+BACKUPDIR: "/opt/backup/{{ ansible_hostname }}/BKP_ETCDS_{{ ansible_date_time.date }}"
+ETCD_POD_MANIFEST: /etc/origin/node/pods/etcd.yaml
+
+## Authentication variables for accessing OpenShift cluster or
+OCADDRESS: "{{master_url}}:{{master_port}}"
+OCUSER: "{{master_user}}"
+OCPASS: "{{master_pwd}}"
+OCPROJECT: "kube-system"
+
+CERT: "/etc/etcd/peer.crt"
+KEY: "/etc/etcd/peer.key"
+CACERT: "/etc/etcd/ca.crt"

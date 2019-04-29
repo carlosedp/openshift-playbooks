@@ -1,0 +1,29 @@
+BACKUPDIR: "/opt/backup/{{ ansible_hostname }}/BKP_OBJECTS_{{ansible_date_time.date}}"
+objects:
+  - rolebindings
+  - serviceaccounts
+  - secrets
+  - imagestreamtags
+  - cm
+  - egressnetworkpolicies
+  - rolebindingrestrictions
+  - limitranges
+  - resourcequotas
+  - dc
+  - ds
+  - pv
+  - pvc
+  - templates
+  - cronjobs
+  - statefulsets
+  - hpa
+  - deployments
+  - replicasets
+  - poddisruptionbudget
+  - endpoints
+  - oauthclient
+  - route
+  - rc
+  - is
+  - networkpolicies
+  - podpreset

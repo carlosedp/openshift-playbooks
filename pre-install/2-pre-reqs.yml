@@ -1,0 +1,102 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+
+  vars:
+    docker_version: "docker"
+    stor_drv: "overlay2"
+    devs: "/dev/sdc"
+    docker_cidr: "192.168.108.1/24"
+
+  tasks:
+    - name: Disable all Repositories
+      command: subscription-manager repos --disable="*"
+
+    - name: Refresh Subscription
+      command: "subscription-manager refresh"
+
+    - name: Active Openshift Repositories
+      command: "subscription-manager repos --enable={{ item }}"
+      with_items:
+        - rhel-7-server-rpms
+        - rhel-7-server-extras-rpms
+        - rhel-7-server-ose-3.11-rpms
+        - rhel-7-server-rh-common-rpms
+        - rhel-7-server-ansible-2.6-rpms
+
+    - name: Clean all Repositories and make repolist
+      shell: yum clean all && yum repolist
+
+    - name: Install Network Manager
+      yum:
+        name: NetworkManager
+        state:  latest
+
+    - name: Enable Network Manager
+      service: name=NetworkManager enabled=true state=started
+
+    - name: Install Required Packages
+      yum: name={{ item }} state=installed
+      with_items:
+        - wget
+        - git
+        - net-tools
+        - bind-utils
+        - iptables-services
+        - bridge-utils
+        - bash-completion
+        - chrony
+        - kexec-tools
+        - sos
+        - psacct
+        - yum-utils
+
+    - name: Installing {{ docker_version }}
+      become: true
+      yum:
+        name: "{{ docker_version }}"
+        state: latest
+
+    - name: Update the System
+      yum: state=latest name='*'
+
+    - name: Configure Selinux Policy
+      selinux:
+        policy: targeted
+        state: enforcing
+
+    - name: Stop Docker Service
+      service:
+        name: docker
+        state: stopped
+
+    - name: Wipe Docker Device
+      shell: wipefs -af {{devs}}
+
+    - name: Remove Docker Content from /var/lib/docker
+      command: rm -rf /var/lib/docker/*
+
+    - name: Remove Docker Storage File if exist
+      command: rm -rf /etc/sysconfig/docker-storage-setup
+
+    - name: Configure Docker Storage File
+      copy:
+        content: "STORAGE_DRIVER={{ stor_drv }}\nDEVS={{devs}}\nVG=docker-vg\nCONTAINER_ROOT_LV_NAME=docker-lv\nCONTAINER_ROOT_LV_SIZE=100%FREE\nDATA_SIZE=100%FREE\nCONTAINER_ROOT_LV_MOUNT_PATH=/var/lib/docker"
+        dest: "/etc/sysconfig/docker-storage-setup"
+
+    - name: Setup Docker Storage
+      command: docker-storage-setup
+
+    - name: Create file daemon.json to change docker0 interface IP
+      become: true
+      shell: |
+        cat <<EOF > /etc/docker/daemon.json {
+        "bip": {{ docker_cidr }} }
+
+    - name: Enable and Start Docker Service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+

@@ -1,0 +1,20 @@
+---
+- hosts: all
+  tasks:
+    - name: Register Nodes
+      shell: 'subscription-manager register --username={{rh_user}} --password={{rh_password}} --force'
+
+- hosts: masters
+  tasks:
+    - name: Subscribe Masters
+      shell: 'subscription-manager attach --pool={{master_pool}}'
+
+- hosts: infras
+  tasks:
+    - name: Subscribe Infras
+      shell: 'subscription-manager attach --pool={{infra_pool}}'
+
+- hosts: appnodes
+  tasks:
+    - name: Subscribe AppNodes
+      shell: 'subscription-manager attach --pool={{app_pool}}'

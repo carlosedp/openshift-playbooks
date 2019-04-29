@@ -1,0 +1,49 @@
+- name: Backup Master Servers - Check Backup Master Directory Exists
+  stat:
+    path: "{{ BACKUPDIR }}"
+  register: backup_directory
+
+- name: Backup Master Servers - Create Backup Master Structure
+  file:
+    path: "{{ BACKUPDIR }}"
+    state: directory
+  when: backup_directory.stat.exists == false
+
+- name: Backup Master Servers - Copy Origin Files
+  copy:
+    src: /etc/origin/
+    dest: "{{ BACKUPDIR }}/etc/origin"
+    backup: yes
+
+- name: Backup Master Servers - Copy Sysconfig Files
+  copy:
+    src: /etc/sysconfig/
+    dest: "{{ BACKUPDIR }}/etc/sysconfig"
+    backup: yes
+
+- name: Backup Master Servers - Copy CNI Files
+  copy:
+    src: /etc/cni/
+    dest: "{{ BACKUPDIR }}/etc/cni"
+    backup: yes
+
+- name: Backup Master Servers - Copy DNSMASQ Files
+  copy:
+    src: /etc/dnsmasq.d/
+    dest: "{{ BACKUPDIR }}/etc/dnsmasq.d"
+    backup: yes
+
+- name: Backup Master Servers - Copy DNSMASQ CONF Files
+  copy:
+    src: /etc/dnsmasq.conf
+    dest: "{{ BACKUPDIR }}/etc"
+    backup: yes
+
+- name: Backup Master Servers - Copy Certificates Files
+  copy:
+    src: /etc/pki/ca-trust/source/anchors/
+    dest: "{{ BACKUPDIR }}/etc/pki/ca-trust/source/anchors/"
+    backup: yes
+
+- name: Backup Master Servers - Generate Package List from Master Servers
+  shell: rpm -qa | sort | sudo tee "{{ BACKUPDIR }}/packages.txt"

@@ -1,0 +1,16 @@
+[all:vars]
+ansible_become=yes
+rh_user=username
+rh_password=secret
+master_pool=aaaaaaa
+infra_pool=aaaaaaa
+app_pool=bbbbbbb
+
+# New host to be added
+[masters]
+#host05.mydomain.com
+[infras]
+#host05.mydomain.com
+[appnodes]
+#host05.mydomain.com
+

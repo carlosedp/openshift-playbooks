@@ -1,0 +1,12 @@
+---
+- name: Backup Openshift
+  hosts: all
+  #become: true
+  #become_user: root
+  gather_facts: false
+
+- import_playbook: backup-etcds.yml
+- import_playbook: backup-clusterfs.yml
+- import_playbook: backup-master.yml
+- import_playbook: backup-nodes.yml
+- import_playbook: backup-objects.yml

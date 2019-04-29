@@ -1,0 +1,35 @@
+- name: Get the Endpoints
+  shell: grep https "{{ ETCD_POD_MANIFEST }}" | cut -d '/' -f3
+  register: ETCD_EP
+
+- debug:
+    var: ETCD_EP
+
+- name: Get inside OCP cluster to get access of ETCDs PODS
+  shell: oc login "{{ OCADDRESS }}" -u "{{ OCUSER }}" -p "{{ OCPASS }}" --insecure-skip-tls-verify
+
+- name: Get the ETCDs PODS
+  shell: oc get pods -n "{{ OCPROJECT }}" | grep -o -m 1 '\S*etcd\S*'
+  register: ETCD_POD
+
+- debug:
+    var: ETCD_POD
+
+- name: Go to Kube-System Project
+  shell: oc project "{{ OCPROJECT }}"
+
+- name: Execute and save the Snapshot
+  shell: oc exec "{{ ETCD_POD.stdout }}" -c etcd -- /bin/bash -c "ETCDCTL_API=3 etcdctl --cert {{ CERT }} --key {{ KEY }} --cacert {{ CACERT }} --endpoints {{ ETCD_EP.stdout }} snapshot save /var/lib/etcd/snapshot.db"
+  with_items: "{{ ETCD_POD.stdout }}"
+
+- name: Backup ETCD Directory to Host
+  copy:
+    src: /etc/etcd
+    dest: "{{ BACKUPDIR }}"
+    backup: yes
+
+- name: Copy Snapshot to Backup Host
+  copy:
+    src: /var/lib/etcd/snapshot.db
+    dest: "{{ BACKUPDIR }}"
+    backup: yes

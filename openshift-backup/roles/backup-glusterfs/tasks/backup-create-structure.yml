@@ -1,0 +1,54 @@
+- name: Backup CNS Servers - Check Backup CNS Directory Exists
+  stat:
+    path: "{{ VOLDIR }}"
+  register: backup_directory
+
+- name: Backup CNS Servers - Create Backup CNS Structure
+  file:
+    path: "{{ VOLDIR }}"
+    state: directory
+  when: backup_directory.stat.exists == false
+
+- name: Backup CNS Servers - Check SNAPSHOT CNS Directory Exists
+  stat:
+    path: "{{ SNAPDIR }}"
+  register: snapshot_directory
+
+- name: Backup CNS Servers - Create SNAPSHOT CNS Structure
+  file:
+    path: "{{ SNAPDIR }}"
+    state: directory
+  when: snapshot_directory.stat.exists == false
+
+- name: Backup CNS Servers - Check PARENT CNS Directory Exists
+  stat:
+    path: "{{ PARENTMOUNT }}"
+  register: snapshot_directory
+
+- name: Backup CNS Servers - Create PARENT CNS Structure
+  file:
+    path: "{{ PARENTMOUNT }}"
+    state: directory
+  when: snapshot_directory.stat.exists == false
+
+- name: Backup CNS Servers - Check LOG CNS Directory Exists
+  stat:
+    path: "{{ LOGDIR }}"
+  register: log_directory
+
+- name: Backup CNS Servers - Create LOG CNS Structure
+  file:
+    path: "{{ LOGDIR }}"
+    state: directory
+  when: log_directory.stat.exists == false
+
+- name: Backup CNS Servers - Check DESTINATION CNS Directory Exists
+  stat:
+    path: "{{ DESTINATION }}"
+  register: log_directory
+
+- name: Backup CNS Servers - Create DESTINATION CNS Structure
+  file:
+    path: "{{ DESTINATION }}"
+    state: directory
+  when: log_directory.stat.exists == false

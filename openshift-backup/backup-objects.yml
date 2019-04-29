@@ -1,0 +1,6 @@
+---
+- hosts: bastion
+  vars_files:
+    - roles/backup-objects/vars/vars.yaml
+  roles:
+  - { role: backup-objects, become: yes }

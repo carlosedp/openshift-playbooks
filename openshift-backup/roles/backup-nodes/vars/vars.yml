@@ -1,0 +1,1 @@
+BACKUPDIR: "/opt/backup/{{ ansible_hostname }}/BKP_NODES_{{ansible_date_time.date}}"

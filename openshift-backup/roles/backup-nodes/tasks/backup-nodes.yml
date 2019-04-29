@@ -1,0 +1,79 @@
+- name: Backup Nodes Servers - Check Backup Node Directory Exists
+  stat:
+    path: "{{ BACKUPDIR }}"
+  register: backup_directory
+
+- name: Backup Nodes Servers - Create Backup Node Structure
+  file:
+    path: "{{ BACKUPDIR }}"
+    state: directory
+  when: backup_directory.stat.exists == false
+
+- name: Backup Nodes Servers - Copy Origin Files
+  copy:
+    src: /etc/origin/
+    dest: "{{ BACKUPDIR }}/etc/origin"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy Atomic Files
+  copy:
+    src: /etc/sysconfig/atomic-openshift-node
+    dest: "{{ BACKUPDIR }}/etc/sysconfig"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy IPTables Files
+  copy:
+    src: /etc/sysconfig/iptables
+    dest: "{{ BACKUPDIR }}/etc/sysconfig/iptables"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy Docker Storage Setup Files
+  copy:
+    src: /etc/sysconfig/docker-storage-setup
+    dest: "{{ BACKUPDIR }}/etc/sysconfig/docker-storage-setup"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy Docker Files
+  copy:
+    src: /etc/sysconfig/docker
+    dest: "{{ BACKUPDIR }}/etc/sysconfig/docker"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy Docker Network Files
+  copy:
+    src: /etc/sysconfig/docker-network
+    dest: "{{ BACKUPDIR }}/etc/sysconfig/docker-network"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy Docker Storage Files
+  copy:
+    src: /etc/sysconfig/docker-storage
+    dest: "{{ BACKUPDIR }}/etc/sysconfig/docker-storage"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy CNI Files
+  copy:
+    src: /etc/cni/
+    dest: "{{ BACKUPDIR }}/etc/cni"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy DNSMASQ Files
+  copy:
+    src: /etc/dnsmasq.d/
+    dest: "{{ BACKUPDIR }}/etc/dnsmasq.d"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy DNSMASQ CONF Files
+  copy:
+    src: /etc/dnsmasq.conf
+    dest: "{{ BACKUPDIR }}/etc"
+    backup: yes
+
+- name: Backup Nodes Servers - Copy Certificates Files
+  copy:
+    src: /etc/pki/ca-trust/source/anchors/
+    dest: "{{ BACKUPDIR }}/etc/pki/ca-trust/source/anchors/"
+    backup: yes
+
+- name: Backup Nodes Servers - Generate Package List from Master Servers
+  shell: rpm -qa | sort | sudo tee "{{ BACKUPDIR }}/packages.txt"

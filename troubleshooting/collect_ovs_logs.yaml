@@ -1,0 +1,70 @@
+---
+# How to run:
+# Ex.: ansible-playbook ovs.yaml -e "pod=ovs-xxx"
+- hosts: localhost
+  name: Collect Logs OVS
+  gather_facts: yes
+  vars:
+    rh_dir: "ovs-dump"
+    project: "openshift-sdn"
+  tasks:
+
+    - name: Create directory {{ rh_dir }}
+      shell: mkdir -p /home/USER/{{ rh_dir }}
+
+    - name: Identify Server for pod {{ pod }}
+      shell: oc get pods -o wide -n {{ project }} | grep {{ pod }} | awk '{ print $7 }'
+      register: hostserver
+    - set_fact:
+        hostserver={{ hostserver.stdout }}
+
+    - name: Collect output Ps OVS
+      shell: ssh {{ hostserver }} ps -Taxfe -o %cpu,%mem,pid,spid,cmd | grep ovs > /home/USER/{{ rh_dir }}/ovs_ps-all.out
+
+    - name: Get PIDs OVS Process
+      shell: ssh {{ hostserver }} ps -Taxe -o %p,%c | grep ovs | cut -d"," -f1
+      register: pid_ovs
+
+    - name: Generate Core Dump OVS Process
+      shell: ssh {{ hostserver }} sudo gcore {{ item }}
+      with_items:
+        - "{{ pid_ovs.stdout_lines }}"
+
+    - name: Copy to bastion coredumps
+      shell: rsync -av --progress {{ hostserver }}:/home/USER/core.{{ item }} /home/USER/{{ rh_dir }}/
+      with_items:
+        - "{{ pid_ovs.stdout_lines }}"
+
+    - name: Capture Info Bridge Interface for OVS
+      shell: oc -n {{ project }} rsh {{ pod }} ovs-ofctl {{ item }} br0 > /home/USER/{{ rh_dir }}/ovs_{{ item }}.out
+      ignore_errors: yes
+      with_items:
+        - dump-flows
+        - dump-ports-desc
+        - dump-ports
+        - queue-get-config
+        - queue-stats
+        - show
+
+    - name: Capture OpenFlow13 for OVS
+      shell: oc -n {{ project }} rsh {{ pod }} ovs-ofctl -O OpenFlow13 {{ item }} br0 > /home/USER/{{ rh_dir }}/ovs_openflow13_{{ item }}.out
+      ignore_errors: yes
+      with_items:
+        - show
+        - dump-groups
+        - dump-group-stats
+        - dump-flows
+        - dump-ports-desc
+
+    - name: List files /var/run/openvswitch
+      shell: oc -n {{ project }} rsh {{ pod }} ls -laZ /var/run/openvswitch > /home/USER/{{ rh_dir }}/ovs_ls_run_openvswitch.out
+
+    - name: Capture stats OVS
+      shell: |
+        oc -n {{ project }} rsh {{ pod }} ovs-dpctl -s show > /home/USER/{{ rh_dir }}/ovs-dpctl-show.out
+        oc -n {{ project }} rsh {{ pod }} ovsdb-client -f list dump > /home/USER/{{ rh_dir }}/ovsdb-client-list-dump.out
+        oc -n {{ project }} rsh {{ pod }} ovs-vsctl -t 5 show > /home/USER/{{ rh_dir }}/ovs-vsctl-5-show.out
+        oc -n {{ project }} rsh {{ pod }} ovs-vsctl list Open_vSwitch > /home/USER/{{ rh_dir }}/ovs-vsctl-list-Open_vSwitch.out
+        oc -n {{ project }} rsh {{ pod }} ovs-appctl coverage/show > /home/USER/{{ rh_dir }}/ovs-appctl-coverage-show.out
+        oc -n {{ project }} rsh {{ pod }} ovs-appctl upcall/show > /home/USER/{{ rh_dir }}/ovs-appctl-upcall-show.out
+      ignore_errors: yes

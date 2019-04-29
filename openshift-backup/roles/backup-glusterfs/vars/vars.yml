@@ -1,0 +1,31 @@
+## Environment variables for RHOCS Backup:
+## Deployment mode for RHOCS cluster: converged (CNS) or independent (CRS)
+# RHOCSMODE: "converged"
+
+## Authentication variables for accessing OpenShift cluster or
+## Gluster nodes depending on deployment mode
+OCADDRESS: "{{master_url}}:{{master_port}}"
+OCUSER: "{{master_user}}"
+OCPASS: "{{master_pwd}}"
+OCPROJECT: "glusterfs" ## OpenShift project where gluster cluster lives
+
+## Any of the Gluster servers from RHOCS converged cluster
+## used for mounting gluster snapshots
+GLUSTERSERVER: '{{gluster_ip}}'
+
+## Directory for temporary files to put the list of
+BKP_BASE: "/opt/backup/{{ ansible_hostname }}/BKP_CNS_{{ansible_date_time.date}}"
+VOLDIR: "{{ BKP_BASE }}/volumes"
+SNAPDIR: "{{ BKP_BASE }}/snapshot"
+LOGDIR: "{{ BKP_BASE }}/logs"
+DESTINATION: "{{ BKP_BASE }}/backup"
+SNAP_CONTAINER_DIR: "/var/lib/glusterd"
+
+## Destination directory for mounting snapshots of Gluster volumes:
+PARENTMOUNT: "{{ BKP_BASE }}/snapshot/mnt"
+
+## Heketi Route and Credentials
+USERHEKETI: "{{heketi_user}}"
+SECRETHEKETI: "{{heketi_secret}}"
+HEKETI_CLI_SERVER: '{{heketi_url}}'
+

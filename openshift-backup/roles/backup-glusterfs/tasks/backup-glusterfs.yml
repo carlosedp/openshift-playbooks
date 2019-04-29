@@ -1,0 +1,55 @@
+- name: Create Volume List File
+  shell: heketi-cli volume list --server "{{ HEKETI_CLI_SERVER }}" --user "{{ USERHEKETI }}" --secret "{{ SECRETHEKETI }}" | grep -v block | grep -v heketidbstorage | cut -d":" -f4
+  register: volume_list
+
+- debug:
+    var: volume_list
+
+- name: Get inside OCP cluster to get access of Gluster pod
+  shell: oc login "{{ OCADDRESS }}" -u "{{ OCUSER }}" -p "{{ OCPASS }}" --insecure-skip-tls-verify
+
+- name: Testing loop over volume_list elements
+  shell: "echo {{ item }}"
+  with_items: "{{ volume_list.stdout }}"
+
+- name: Take the pod name of Gluster Server
+  shell: oc get pods --all-namespaces -o wide | grep glusterfs | grep "{{ GLUSTERSERVER }}" | tr -s " " | cut -f2 -d" "
+  register: gluster_pod
+
+- debug:
+    var: gluster_pod
+
+- name: Enter to GlusterFS Project
+  shell: oc project "{{ OCPROJECT }}"
+
+- set_fact:
+    date: "{{ ansible_date_time.date }}"
+
+- name: Creating directories for listed volumes
+  file:
+    path: "{{ PARENTMOUNT }}/{{ item }}-snap-{{ date }}"
+    state: directory
+  with_items: "{{ volume_list.stdout }}"
+
+- name: Executing Gluster Snapshot
+  shell: "oc rsh {{ gluster_pod.stdout }} gluster snapshot create {{ item }}-snap-{{ date }} {{ volume_list.stdout }} no-timestamp"
+  with_items: "{{ volume_list.stdout }}"
+
+- name: Activing Gluster Snapshot
+  shell: "oc rsh {{ gluster_pod.stdout }} gluster snapshot activate {{ item }}-snap-{{ date }}"
+  with_items: "{{ volume_list.stdout }}"
+  
+- name: Mount the Volumes
+  shell: "mount -t glusterfs {{ gluster_pod.stdout }}:{{ SNAP_CONTAINER_DIR }}/snaps/{{ item }}-snap-{{ date }} {{ PARENTMOUNT }}/{{ item }}-snap-{{ date }}"
+  with_items: "{{ volume_list.stdout }}"
+
+- name: Backup the Heketi DB
+  shell: heketi-cli db dump --server "{{ HEKETI_CLI_SERVER }}" --user "{{ USERHEKETI }}" --secret "{{ SECRETHEKETI }}" > "{{ PARENTMOUNT }}"/heketidb-{{ date }}.json
+
+- name: Umount the Volumes and delete the snapshot
+  shell: "umount {{ gluster_pod.stdout }}:{{ SNAP_CONTAINER_DIR }}/snaps/{{ item }}-snap-{{ date }}"
+  with_items: "{{ volume_list.stdout }}"
+
+- name: Delete Snapshot from POD
+  shell: "oc rsh {{ gluster_pod.stdout }} gluster snapshot delete {{ item }}-snap-{{ date }} <<EOF\ny\nEOF"
+  with_items: "{{ volume_list.stdout_lines }}"

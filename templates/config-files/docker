@@ -1,0 +1,4 @@
+ADD_REGISTRY='--add-registry registry.redhat.io'
+#HTTP_PROXY='http://proxy.mydomain.com:3128'
+#HTTPS_PROXY='http://proxy.mydomain.com:3128'
+OPTIONS=' --selinux-enabled --signature-verification=False'

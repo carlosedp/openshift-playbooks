@@ -1,0 +1,21 @@
+kind: LDAPSyncConfig
+apiVersion: v1
+url: ldap://ldapmydomain.com:389
+bindDN: "CN=svc_openshift,OU=Servicos,DC=mydomain,DC=com"
+bindPassword: "secret"
+insecure: true
+activeDirectory:
+  usersQuery:
+    baseDN: "DC=mydomain,DC=com"
+    scope: sub
+    derefAliases: never
+    filter: (objectCategory=*)
+    pageSize: 1
+  userNameAttributes: [ sAMAccountName ]
+  groupMembershipAttributes: [ memberOf ]
+groupUIDNameMapping:
+  "CN=GRP-OPENSHIFT-SITEADMIN,OU=GROUPS_ALL,OU=ALL,DC=mydomain,DC=com": GRP-OPENSHIFT-SITEADMIN
+  "CN=GRP-OPENSHIFT-APP-VIEWER,OU=GROUPS_ALL,OU=ALL,DC=mydomain,DC=com": GRP-OPENSHIFT-APP-VIEWER
+  "CN=GRP-OPENSHIFT-APP-PROJECTADMIN,OU=GROUPS_ALL,OU=ALL,DC=mydomain,DC=com": GRP-OPENSHIFT-APP-PROJECTADMIN
+  "CN=GRP-OPENSHIFT-APP-DEVEL,OU=GROUPS_ALL,OU=ALL,DC=mydomain,DC=com": GRP-OPENSHIFT-APP-DEVEL
+

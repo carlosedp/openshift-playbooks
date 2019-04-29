@@ -1,0 +1,16 @@
+---
+# How to run:
+# Ex.: ansible-playbook fix_scaleup_retry_DS.yml
+- hosts: all
+  name: Fix "Wait for sync DS to set annotations on all nodes" error
+  gather_facts: yes
+  vars:
+    rh_dir: "ovs-dump"
+    project: "openshift-sdn"
+  tasks:
+
+    - name: Create MD5 sum
+      shell: md5sum /etc/origin/node/node-config.yaml > /tmp/node-config-md5
+
+    - name: Create node annotation
+      shell: oc annotate --config=/etc/origin/node/node.kubeconfig "node/${HOSTNAME}" node.openshift.io/md5sum="$( cat /tmp/node-config-md5 | cut -d" " -f1 )" --overwrite

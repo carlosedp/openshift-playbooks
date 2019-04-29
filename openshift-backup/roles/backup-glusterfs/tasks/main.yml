@@ -1,0 +1,3 @@
+---
+- import_tasks: backup-create-structure.yaml
+- import_tasks: backup-glusterfs.yaml

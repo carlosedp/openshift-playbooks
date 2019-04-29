@@ -1,0 +1,26 @@
+- name: Backup Project Objects - Check Backup Directory Exists
+  stat:
+    path: "{{ BACKUPDIR }}"
+  register: backup_directory
+
+- name: Backup Project Objects - Create Backup Master Structure
+  file:
+    path: "{{ BACKUPDIR }}"
+    state: directory
+  when: backup_directory.stat.exists == false
+
+- name: Backup Project Objects - Generate List of Projects
+  shell: oc get projects | awk '{print $1}' | grep -v NAME
+  ignore_error: yes
+  change_when: false
+  register: projects
+  run_once: true
+
+- set_fact:
+    projects={{ projects.stdout_lines }}
+
+- name: Backup Project Objects - Openshift Export Objects
+  shell: oc -n {{ item.0 }} get --export {{ item.1 }} -o yaml > "{{ BACKUPDIR }}/{{ item.0 }}-{{ item.1 }}.yaml"
+  with_nested:
+    - "{{  projects  }}"
+    - "{{  objects  }}"

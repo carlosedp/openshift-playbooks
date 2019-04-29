@@ -1,0 +1,6 @@
+---
+- hosts: etcds
+  vars_files:
+    - roles/backup-etcds/vars/vars.yaml
+  roles:
+  - { role: backup-etcds, become: yes }

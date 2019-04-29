@@ -1,0 +1,6 @@
+---
+- hosts: masters
+  vars_files:
+    - roles/backup-masters/vars/vars.yaml
+  roles:
+  - { role: backup-masters, become: yes }
