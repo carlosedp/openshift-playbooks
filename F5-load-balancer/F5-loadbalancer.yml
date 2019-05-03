@@ -21,6 +21,7 @@
       password: 'AdminPwd01!'
       server_port: 443
       validate_certs: no
+    # Define in the lb_instances array each LB instance to be created
     lb_instances: [
       {
         name: 'Master-https',
