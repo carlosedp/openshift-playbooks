@@ -1,0 +1,127 @@
+# P
+[OSEv3:children]
+masters
+nodes
+etcd
+
+[OSEv3:vars]
+ansible_ssh_user=root
+use_cluster_metrics=true
+
+#-----------------------------------  Enable NTP Service --------------------------------------------------------------------------
+openshift_clock_enabled=true
+
+#-----------------------------------  Define deploy type --------------------------------------------------------------------------
+openshift_deployment_type=openshift-enterprise
+
+#-----------------------------------  Define Openshift version --------------------------------------------------------------------
+openshift_release=v3.11
+
+#-----------------------------------  Disable pre-install checks ------------------------------------------------------------------
+openshift_disable_check=memory_availability,disk_availability,docker_storage,docker_storage_driver,docker_image_availability,package_version,package_availability,package_update
+
+#-----------------------------------  Define cluster method and hostname ----------------------------------------------------------
+openshift_master_cluster_method=native
+openshift_master_cluster_hostname=ocpmaster.mydomain.com
+openshift_master_cluster_public_hostname=ocpmaster.mydomain.com
+openshift_master_default_subdomain=ocpapp.mydomain.com
+
+#-----------------------------------  Define firewall if iptables or firewallcmd --------------------------------------------------
+os_firewall_use_firewalld=false
+
+#----------------------------------- Define DNSMasq use ---------------------------------------------------------------------------
+openshift_use_dnsmasq=true
+openshift_set_node_ip=true
+
+#----------------------------------- Deploy Cockpit use ---------------------------------------------------------------------------
+#osm_use_cockpit=true
+
+#----------------------------------- Define Openshift Catalog ---------------------------------------------------------------------
+openshift_enable_service_catalog=true
+
+
+#----------------------------------- Define SDN Network ---------------------------------------------------------------------------
+osm_cluster_network_cidr=10.236.0.0/14
+openshift_portal_net=10.240.0.0/16
+
+#----------------------------------- Define the authentication providers ----------------------------------------------------------
+### LDAP auth provider
+openshift_master_identity_providers=[{'name': 'ms_auth', 'challenge': 'true','login': 'true', 'kind': 'LDAPPasswordIdentityProvider', 'attributes': {'id':['sAMAccountName'], 'email': ['mail'], 'name': ['cn'], 'preferredUsername': ['uid']}, 'bindDN':'CN=adm,CN=Users,DC=mycompany,DC=brasil', 'bindPassword':'secret', 'insecure': 'true', 'url': 'ldap://mydomain.com/DC=mycompany,DC=brasil?sAMAccountName'}]
+
+### htpasswd auth provider
+#openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
+
+#----------------------------------- Define Corporate CA Certificates -------------------------------------------------------------
+openshift_master_overwrite_named_certificates=true
+openshift_master_named_certificates=[{"certfile": "/root/cert/ocpmaster/ocpmaster.mydomain.com.crt", "keyfile": "/root/cert/ocpmaster/ocpmaster.mydomain.com.key", "cafile": "/root/cert/ocpmaster/rootcar-ocpmaster.crt"}]
+
+#----------------------------------- Deploy router instance -----------------------------------------------------------------------
+openshift_router_selector='node-role.kubernetes.io/infra=true'
+openshift_hosted_router_certificate={"certfile": "/root/cert/ocpapp/ocpapp.mydomain.com.crt", "keyfile": "/root/cert/ocpapp/ocpapp.mydomain.com.key", "cafile": "/root/cert/ocpapp/rootcar-ocpapp.crt"}
+
+#-----------------------------------  Define default project node selector --------------------------------------------------------
+#osm_default_node_selector='region=primary'
+
+#-----------------------------------  Configure Registry --------------------------------------------------------------------------
+#oreg_url=registry.access.redhat.com/openshift3/ose-${component}:${version}
+oreg_auth_user=user
+oreg_auth_password="secret"
+openshift_registry_selector="node-role.kubernetes.io/infra=true"
+openshift_hosted_registry_replicas=2
+openshift_hosted_registry_storage_kind=nfs
+openshift_hosted_registry_storage_access_modes=['ReadWriteMany']
+openshift_hosted_registry_storage_host=nfslinux
+openshift_hosted_registry_storage_nfs_directory=/ocregistry
+openshift_hosted_registry_storage_volume_name=pv-registry
+openshift_hosted_registry_storage_volume_size=50Gi
+
+##----------------------------------- Configure Metrics ----------------------------------------------------------------------------
+openshift_metrics_install_metrics=true
+openshift_metrics_duration=30
+openshift_metrics_cassandra_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_metrics_hawkular_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_metrics_heapster_nodeselector={"node-role.kubernetes.io/infra":"true"}
+
+#----------------------------------- Configure Logging EFK -------------------------------------------------------------------------
+openshift_logging_install_logging=false
+openshift_logging_es_memory_limit=4G
+openshift_logging_curator_default_days=30
+openshift_logging_curator_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_logging_kibana_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_logging_es_nodeselector={"node-role.kubernetes.io/infra":"true"}
+logging_elasticsearch_rollout_override=false
+
+#----------------------------------- Define Proxy Configuration to set in docker config of nodes ------------------------------------
+openshift_http_proxy='http://proxy.mydomain.com:3128'
+#openshift_https_proxy='https://proxy.mydomain.com:3128'
+openshift_no_proxy='.mydomain.com'
+openshift_generate_no_proxy_hosts=true
+
+#----------------------------------- Define Custom Node Groups Labels----------------------------------------------------------------------------
+[etcd]
+### ETC Hosts
+server3.mydomain.com
+server4.mydomain.com
+server5.mydomain.com
+
+[masters]
+### Master Servers
+server3.mydomain.com
+server4.mydomain.com
+server5.mydomain.com
+
+[nodes]
+### Master Nodes
+server3.mydomain.com openshift_public_hostname=server3.mydomain.com openshift_hostname=server3 openshift_node_group_name='node-config-master'
+server4.mydomain.com openshift_public_hostname=server4.mydomain.com openshift_hostname=server4 openshift_node_group_name='node-config-master'
+server5.mydomain.com openshift_public_hostname=server5.mydomain.com openshift_hostname=server5 openshift_node_group_name='node-config-master'
+
+### Infra Nodes
+server6.mydomain.com openshift_public_hostname=server6.mydomain.com openshift_hostname=server6 openshift_node_group_name='node-config-infra'
+server7.mydomain.com openshift_public_hostname=server7.mydomain.com openshift_hostname=server7 openshift_node_group_name='node-config-infra'
+
+### Nodes PRD
+server8.mydomain.com openshift_public_hostname=server8.mydomain.com openshift_hostname=server8.mydomain.com openshift_node_group_name='node-config-compute'
+server9.mydomain.com openshift_public_hostname=server9.mydomain.com openshift_hostname=server9.mydomain.com openshift_node_group_name='node-config-compute'
+server-loc0.mydomain.com openshift_public_hostname=server-loc0.mydomain.com openshift_hostname=server-loc0.mydomain.com openshift_node_group_name='node-config-compute'
+server-loc1.mydomain.com openshift_public_hostname=server-loc1.mydomain.com openshift_hostname=server-loc1.mydomain.com openshift_node_group_name='node-config-compute'

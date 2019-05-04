@@ -325,7 +325,7 @@ router_public_site2-010.mydomain.com openshift_node_labels="{'type': 'router', '
 router_public_site2-011.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-011.mydomain.com openshift_ip=172.18.3.48 openshift_public_ip=172.18.3.48
 router_public_site2-012.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region2', 'location': 'public', 'kind': 'vm'}" openshift_hostname=router_public_site2-012.mydomain.com openshift_ip=172.18.3.49 openshift_public_ip=172.18.3.49
 
-# ROUTER FRONT SANTANDER
+# ROUTER FRONT
 router-front-n001.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n001.mydomain.com openshift_ip=172.18.4.13 openshift_public_ip=172.18.4.13
 router-front-n002.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n002.mydomain.com openshift_ip=172.18.4.14 openshift_public_ip=172.18.4.14
 router-front-n003.mydomain.com openshift_node_labels="{'type': 'router', 'region': ' region1', 'location': 'front', 'kind': 'vm'}" openshift_hostname=router-front-n003.mydomain.com openshift_ip=172.18.4.15 openshift_public_ip=172.18.4.15
