@@ -13,20 +13,17 @@
       path: "{{ install_dir }}"
       state: directory
       mode: "0755"
-    delegate_to: localhost
 
   - name: Create download dir
     file:
       path: "./{{ install_dir }}/downloads"
       state: directory
       mode: "0755"
-    delegate_to: localhost
 
   - name: Generate SSH keys
     openssh_keypair:
       path: "{{ install_dir }}/id_ssh_rsa"
       size: 2048
-    delegate_to: localhost
 
   - name: Get host OS type
     set_fact:
@@ -37,13 +34,11 @@
       url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-{{os}}-{{openshift_version}}.tar.gz"
       dest: "downloads/openshift-install-{{os}}-{{openshift_version}}.tar.gz"
       mode: "0440"
-    delegate_to: localhost
 
   - name: Download Openshift oc cli
     get_url:
       url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-{{os}}-{{openshift_version}}.tar.gz"
       dest: "downloads/openshift-client-{{os}}-{{openshift_version}}.tar.gz"
-    delegate_to: localhost
 
   - name: Unpack Openshift Installer
     unarchive:
@@ -59,12 +54,10 @@
     slurp:
       src: "{{ install_dir }}/id_ssh_rsa.pub"
     register: sshkeyencoded
-    delegate_to: localhost
 
   - name: Decode SSH key
     set_fact:
       sshkey: "{{ sshkeyencoded.content | b64decode }}"
-    delegate_to: localhost
 
   - name: Read pull secret from "pullsecret.txt"
    # Depends on jinja2_native = true setting in ansible.cfg
@@ -76,48 +69,43 @@
     template:
       src: templates/install-config.yaml.j2
       dest: "{{ install_dir }}/install-config.yaml"
-    delegate_to: localhost
 
   - name: Generate manifests
     command: ./openshift-install create manifests --dir={{ install_dir }}
-    delegate_to: localhost
 
   - name: Set mastersSchedulable parameter to False
     lineinfile:
       path: "{{ install_dir }}/manifests/cluster-scheduler-02-config.yml"
       regexp: "mastersSchedulable"
       line: "  mastersSchedulable: False"
-    delegate_to: localhost
 
   - name: Create NetworkPolicy Config
     template:
       src: templates/network-policy.yml.j2
       dest: "{{ install_dir }}/manifests/cluster-network-03-config.yml"
-    delegate_to: localhost
 
   - name: Generate ignition files
     command: ./openshift-install create ignition-configs --dir={{ install_dir }}
-    delegate_to: localhost
 
   - name: Create bootstrap-append file
     template:
       src: templates/append-bootstrap.ign.j2
       dest: "{{ install_dir }}/append-bootstrap.ign"
-    delegate_to: localhost
 
   - name: Generate base64 from ignition files
     copy:
       content: "{{ lookup('file', install_dir + '/' + item + '.ign') | b64encode }}"
-      dest: "./{{ install_dir }}{{ item }}.64"
+      dest: "{{ install_dir + '/' + item + '.64'}}"
     loop:
       - append-bootstrap
       - master
       - worker
+    tags:
+      - test
 
   - name: Copy bootstrap ignition to HTTP server
     copy: src="{{ install_dir }}/bootstrap.ign"
           dest="/var/www/html/bootstrap.ign"
-    delegate_to: localhost
     when: os == "Linux"
 
   - name: Download Openshift OVA
@@ -125,7 +113,6 @@
       url: https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/{{  openshift_version.split(".")[0] }}.{{ openshift_version.split(".")[1]  }}/latest/rhcos-{{  openshift_version.split(".")[0] }}.{{ openshift_version.split(".")[1]  }}.0-x86_64-vmware.ova
       dest: "{{ playbook_dir }}/downloads/rhcos-{{  openshift_version.split('.')[0] }}.{{ openshift_version.split('.')[1]  }}.0-x86_64-vmware.ova"
       mode: "0440"
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -139,7 +126,6 @@
       folder_type: vm
       state: present
     register: vm_folder_creation_result
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -154,11 +140,10 @@
       datacenter: "{{ vcenter_datacenter }}"
       datastore: "{{ vcenter_datastore }}"
       name: OCP-Nodes
-      folder: "{{ vm_folder_creation_result['path'] }}"
+      folder: "{{ vm_folder_creation_result.path }}"
       networks: "{u'VM Network':u'{{ vcenter_network }}'}"
       disk_provisioning: thin
       power_on: no
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -168,7 +153,7 @@
       username: "{{ vcenter_user }}"
       password: "{{ vcenter_pwd }}"
       validate_certs: no
-      folder: "{{ vm_folder_creation_result['path'] }}"
+      folder: "{{ vm_folder_creation_result.path }}"
       name: OCP-Bootstrap
       state: poweredoff
       template: OCP-Nodes
@@ -187,10 +172,9 @@
         - key: guestinfo.ignition.config.data.encoding
           value: "base64"
         - key: guestinfo.ignition.config.data
-          value: "{{ files['results']['append-bootstrap']['content'] }}"
+          value: "{{ files.results.append-bootstrap.content }}"
         - key: disk.EnableUUID
           value: "TRUE"
-    delegate_to: localhost
     register: bootstrap
     tags:
       - vcenter
@@ -201,7 +185,7 @@
       username: "{{ vcenter_user }}"
       password: "{{ vcenter_pwd }}"
       validate_certs: no
-      folder: "{{ vm_folder_creation_result['path'] }}"
+      folder: "{{ vm_folder_creation_result.path }}"
       name: OCP-Master-{{ item }}
       state: poweredoff
       template: OCP-Nodes
@@ -220,10 +204,9 @@
         - key: guestinfo.ignition.config.data.encoding
           value: "base64"
         - key: guestinfo.ignition.config.data
-          value: "{{ files['results']['master']['content'] }}"
+          value: "{{ files.results.master.content }}"
         - key: disk.EnableUUID
           value: "TRUE"
-    delegate_to: localhost
     register: controlplane
     loop:
       - 0
@@ -238,7 +221,7 @@
       username: "{{ vcenter_user }}"
       password: "{{ vcenter_pwd }}"
       validate_certs: no
-      folder: "{{ vm_folder_creation_result['path'] }}"
+      folder: "{{ vm_folder_creation_result.path }}"
       name: OCP-Infra-{{ item }}
       state: poweredoff
       template: OCP-Nodes
@@ -258,10 +241,9 @@
         - key: guestinfo.ignition.config.data.encoding
           value: "base64"
         - key: guestinfo.ignition.config.data
-          value: "{{ files['results']['worker']['content'] }}"
+          value: "{{ files.results.worker.content }}"
         - key: disk.EnableUUID
           value: "TRUE"
-    delegate_to: localhost
     register: controlplane
     loop:
       - 0
@@ -281,7 +263,6 @@
       - OCP-Master-2
       - OCP-Infra-0
       - OCP-Infra-1
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -304,7 +285,6 @@
       - OCP-Master-2
       - OCP-Infra-0
       - OCP-Infra-1
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -321,7 +301,6 @@
       - OCP-Master-2
       - OCP-Infra-0
       - OCP-Infra-1
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -333,7 +312,6 @@
     with_items:
       - dhcp
     become: yes
-    delegate_to: localhost
     tags:
       - vcenter
 
@@ -346,7 +324,6 @@
       folder: "{{ vcenter_folder_full }}"
       name: "{{ hostname }}"
       state: powered-on
-    delegate_to: localhost
     register: power_on
     loop:
       - OCP-Bootstrap
@@ -361,11 +338,9 @@
   - name: Wait 5min for VMs to start
     wait_for:
       timeout: 300
-    delegate_to: localhost
 
   - name: Complete cluster bootstrap
     command: ./openshift-install --dir={{ install_dir }} wait-for bootstrap-complete --log-level=info
-    delegate_to: localhost
 
   - debug:
       msg: "Finish install by configuring the Image Registry storage and run ./openshift-install --dir={{ install_dir }} wait-for install-complete"

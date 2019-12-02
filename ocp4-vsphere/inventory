@@ -5,7 +5,7 @@ ansible_connection=ssh
 
 # Define binary versions
 openshift_version="4.2.8"
-install_dir="./installer"
+install_dir=installer
 
 # Cluster parameters
 # Save downloaded pull secret in a file called pullsecret.txt

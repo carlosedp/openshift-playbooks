@@ -3,7 +3,7 @@
     "config": {
       "append": [
         {
-          "source": "http://{{ ansible_ssh_host }}/bootstrap.ign",
+          "source": "http://{{ ansible_default_ipv4.address }}/bootstrap.ign",
           "verification": {}
         }
       ]

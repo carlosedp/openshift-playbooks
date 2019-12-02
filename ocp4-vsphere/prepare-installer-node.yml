@@ -57,9 +57,9 @@
     with_items:
        - httpd
        - dhcp
+    delegate_to: localhost
     tags:
       - server
-    delegate_to: localhost
 
   - name: Install pyvmomi module (for vSphere integration)
     become: true
