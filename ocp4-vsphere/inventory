@@ -1,0 +1,41 @@
+[all:vars]
+ansible_connection=ssh
+; ansible_ssh_user=root
+; ansible_ssh_pass=password
+
+# Define binary versions
+openshift_version="4.2.8"
+install_dir="./installer"
+
+# Cluster parameters
+# Save downloaded pull secret in a file called pullsecret.txt
+basedomain=testcluster.local
+clustername=production
+pod_cidr=10.0.0.0/16
+machine_cidr=192.168.0.0/23
+service_cidr=10.1.0.0/16
+
+# Leave proxy variables blank if no proxy is used
+httpProxy=
+httpsProxy=
+noProxy=
+; httpProxy=http://<username>:<pswd>@<ip>:<port>
+; httpsProxy=http://<username>:<pswd>@<ip>:<port>
+; noProxy=example.com,example2.com
+
+# Reserved IP Addresses
+bootstrap-ip=
+master0-ip=
+master1-ip=
+master2-ip=
+infra0-ip=
+infra1-ip=
+
+vcenter_ip=20.20.20.1
+vcenter_user=vcenteruser
+vcenter_pwd=vcenterpwd
+vcenter_cluster=vcenter-cluster
+vcenter_datacenter=main-datacenter
+vcenter_datastore=datastore-001
+vcenter_network=DefaultNW
+

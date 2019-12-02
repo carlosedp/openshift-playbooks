@@ -1,0 +1,6 @@
+---
+- name: Prepare installer host
+  import_playbook: prepare-installer-node.yml
+
+- name: Deploy Cluster
+  import_playbook: deploy_ocp4.yml

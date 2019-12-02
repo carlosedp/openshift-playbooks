@@ -1,0 +1,69 @@
+---
+- name: Prepare Openshift 4 installer node
+  hosts: localhost
+  connection: local
+  become: true
+  become_user: root
+  gather_facts: false
+
+  tasks:
+
+  - name: Install HTTP and DHCP server
+    package:
+      name: "{{packages}}"
+      state: latest
+    vars:
+     packages:
+       - httpd
+       - dhcp
+    delegate_to: localhost
+    tags:
+      - server
+
+  - name: Check HTTP server config
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^Listen '
+      insertafter: '^#Listen '
+      line: Listen 0.0.0.0:80
+    delegate_to: localhost
+
+  - name: Open Firewall port 80 for http access
+    become: true
+    firewalld:
+      service: http
+      permanent: true
+      state: enabled
+    delegate_to: localhost
+
+  - name: Restart the Firewall service
+    become: true
+    service:
+      name: firewalld
+      state: restarted
+    delegate_to: localhost
+
+  - name: Generate DHCP server config
+    template:
+      src: templates/dhcp.conf.j2
+      dest: /etc/dhcp/dhcpd.conf
+    delegate_to: localhost
+
+  - name: Start and enable HTTP and DHCP services
+    systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+    with_items:
+       - httpd
+       - dhcp
+    tags:
+      - server
+    delegate_to: localhost
+
+  - name: Install pyvmomi module (for vSphere integration)
+    become: true
+    pip:
+      name: pyvmomi
+    delegate_to: localhost
+

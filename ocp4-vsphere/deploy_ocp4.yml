@@ -1,0 +1,381 @@
+---
+- name: Prepare Openshift 4 on vSphere
+  hosts: localhost
+  connection: local
+  # become: true
+  # become_user: root
+  gather_facts: true
+
+  tasks:
+
+  - name: Create install dir
+    file:
+      path: "{{ install_dir }}"
+      state: directory
+      mode: "0755"
+    delegate_to: localhost
+
+  - name: Create download dir
+    file:
+      path: "./{{ install_dir }}/downloads"
+      state: directory
+      mode: "0755"
+    delegate_to: localhost
+
+  - name: Generate SSH keys
+    openssh_keypair:
+      path: "{{ install_dir }}/id_ssh_rsa"
+      size: 2048
+    delegate_to: localhost
+
+  - name: Get host OS type
+    set_fact:
+      os: "{% if ansible_os_family=='Linux' %}linux{% elif ansible_os_family=='Darwin'%}mac{% else %}err{% endif %}"
+
+  - name: Download Openshift installer
+    get_url:
+      url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-{{os}}-{{openshift_version}}.tar.gz"
+      dest: "downloads/openshift-install-{{os}}-{{openshift_version}}.tar.gz"
+      mode: "0440"
+    delegate_to: localhost
+
+  - name: Download Openshift oc cli
+    get_url:
+      url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-{{os}}-{{openshift_version}}.tar.gz"
+      dest: "downloads/openshift-client-{{os}}-{{openshift_version}}.tar.gz"
+    delegate_to: localhost
+
+  - name: Unpack Openshift Installer
+    unarchive:
+      src: "downloads/openshift-install-{{os}}-{{openshift_version}}.tar.gz"
+      dest: "."
+
+  - name: Unpack Openshift cli
+    unarchive:
+      src: "downloads/openshift-client-{{os}}-{{openshift_version}}.tar.gz"
+      dest: "."
+
+  - name: Get generated SSH Key
+    slurp:
+      src: "{{ install_dir }}/id_ssh_rsa.pub"
+    register: sshkeyencoded
+    delegate_to: localhost
+
+  - name: Decode SSH key
+    set_fact:
+      sshkey: "{{ sshkeyencoded.content | b64decode }}"
+    delegate_to: localhost
+
+  - name: Read pull secret from "pullsecret.txt"
+   # Depends on jinja2_native = true setting in ansible.cfg
+   # Requires ansible 2.7
+    set_fact:
+      pullsecret: "{{ lookup('file', 'pullsecret.txt') }}"
+
+  - name: Create install config from template
+    template:
+      src: templates/install-config.yaml.j2
+      dest: "{{ install_dir }}/install-config.yaml"
+    delegate_to: localhost
+
+  - name: Generate manifests
+    command: ./openshift-install create manifests --dir={{ install_dir }}
+    delegate_to: localhost
+
+  - name: Set mastersSchedulable parameter to False
+    lineinfile:
+      path: "{{ install_dir }}/manifests/cluster-scheduler-02-config.yml"
+      regexp: "mastersSchedulable"
+      line: "  mastersSchedulable: False"
+    delegate_to: localhost
+
+  - name: Create NetworkPolicy Config
+    template:
+      src: templates/network-policy.yml.j2
+      dest: "{{ install_dir }}/manifests/cluster-network-03-config.yml"
+    delegate_to: localhost
+
+  - name: Generate ignition files
+    command: ./openshift-install create ignition-configs --dir={{ install_dir }}
+    delegate_to: localhost
+
+  - name: Create bootstrap-append file
+    template:
+      src: templates/append-bootstrap.ign.j2
+      dest: "{{ install_dir }}/append-bootstrap.ign"
+    delegate_to: localhost
+
+  - name: Generate base64 from ignition files
+    copy:
+      content: "{{ lookup('file', install_dir + '/' + item + '.ign') | b64encode }}"
+      dest: "./{{ install_dir }}{{ item }}.64"
+    loop:
+      - append-bootstrap
+      - master
+      - worker
+
+  - name: Copy bootstrap ignition to HTTP server
+    copy: src="{{ install_dir }}/bootstrap.ign"
+          dest="/var/www/html/bootstrap.ign"
+    delegate_to: localhost
+    when: os == "Linux"
+
+  - name: Download Openshift OVA
+    get_url:
+      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/{{  openshift_version.split(".")[0] }}.{{ openshift_version.split(".")[1]  }}/latest/rhcos-{{  openshift_version.split(".")[0] }}.{{ openshift_version.split(".")[1]  }}.0-x86_64-vmware.ova
+      dest: "{{ playbook_dir }}/downloads/rhcos-{{  openshift_version.split('.')[0] }}.{{ openshift_version.split('.')[1]  }}.0-x86_64-vmware.ova"
+      mode: "0440"
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Create a folder on VCenter for Openshift
+    vcenter_folder:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter: "{{ vcenter_datacenter }}"
+      folder_name: OCP
+      folder_type: vm
+      state: present
+    register: vm_folder_creation_result
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Deploy VMware template from Downloaded OVA
+    vmware_deploy_ovf:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: no
+      ovf: "{{ playbook_dir }}/downloads/rhcos-4.2.0-x86_64-vmware.ova"
+      cluster: "{{ vcenter_cluster }}"
+      datacenter: "{{ vcenter_datacenter }}"
+      datastore: "{{ vcenter_datastore }}"
+      name: OCP-Nodes
+      folder: "{{ vm_folder_creation_result['path'] }}"
+      networks: "{u'VM Network':u'{{ vcenter_network }}'}"
+      disk_provisioning: thin
+      power_on: no
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Create a virtual machine for Bootstrap node
+    vmware_guest:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: no
+      folder: "{{ vm_folder_creation_result['path'] }}"
+      name: OCP-Bootstrap
+      state: poweredoff
+      template: OCP-Nodes
+      disk:
+      - size_gb: 120
+        type: thin
+        datastore: "{{ vcenter_datastore }}"
+      hardware:
+        memory_mb: 16384
+        num_cpus: 4
+        memory_reservation_lock: True
+        version: 13 # Hardware version of virtual machine
+      networks:
+      - name: "{{ vcenter_network }}"
+      customvalues:
+        - key: guestinfo.ignition.config.data.encoding
+          value: "base64"
+        - key: guestinfo.ignition.config.data
+          value: "{{ files['results']['append-bootstrap']['content'] }}"
+        - key: disk.EnableUUID
+          value: "TRUE"
+    delegate_to: localhost
+    register: bootstrap
+    tags:
+      - vcenter
+
+  - name: Create a virtual machine for Control-Plane nodes
+    vmware_guest:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: no
+      folder: "{{ vm_folder_creation_result['path'] }}"
+      name: OCP-Master-{{ item }}
+      state: poweredoff
+      template: OCP-Nodes
+      disk:
+      - size_gb: 120
+        type: thin
+        datastore: "{{ vcenter_datastore }}"
+      hardware:
+        memory_mb: 16384
+        num_cpus: 4
+        memory_reservation_lock: True
+        version: 13 # Hardware version of virtual machine
+      networks:
+      - name: "{{ vcenter_network }}"
+      customvalues:
+        - key: guestinfo.ignition.config.data.encoding
+          value: "base64"
+        - key: guestinfo.ignition.config.data
+          value: "{{ files['results']['master']['content'] }}"
+        - key: disk.EnableUUID
+          value: "TRUE"
+    delegate_to: localhost
+    register: controlplane
+    loop:
+      - 0
+      - 1
+      - 2
+    tags:
+      - vcenter
+
+  - name: Create a virtual machine for Infra nodes
+    vmware_guest:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: no
+      folder: "{{ vm_folder_creation_result['path'] }}"
+      name: OCP-Infra-{{ item }}
+      state: poweredoff
+      template: OCP-Nodes
+      disk:
+      - size_gb: 120
+        type: thin
+        datastore: "{{ vcenter_datastore }}"
+      hardware:
+        memory_mb: 32768
+        num_cpus: 8
+        scsi: paravirtual
+        memory_reservation_lock: True
+        version: 13 # Hardware version of virtual machine
+      networks:
+      - name: "{{ vcenter_network }}"
+      customvalues:
+        - key: guestinfo.ignition.config.data.encoding
+          value: "base64"
+        - key: guestinfo.ignition.config.data
+          value: "{{ files['results']['worker']['content'] }}"
+        - key: disk.EnableUUID
+          value: "TRUE"
+    delegate_to: localhost
+    register: controlplane
+    loop:
+      - 0
+      - 1
+    tags:
+      - vcenter
+
+  - name: Set VM latency sensitivity parameter to High
+    # Use govc as ansible doesnt't support this yet
+    # vim.LatencySensitivity.SensitivityLevel=high
+    # TODO - Test
+    command: run govc vm.change -vm {{ item }} -latency high
+    loop:
+      - OCP-Bootstrap
+      - OCP-Master-0
+      - OCP-Master-1
+      - OCP-Master-2
+      - OCP-Infra-0
+      - OCP-Infra-1
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Get MAC Addresses from VMs
+    # Store into mac_addresses variable
+    # TODO - Test
+    vmware_guest_info:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: no
+      datacenter: "{{ vcenter_datacenter }}"
+      name: "{{ item }}"
+      schema: "vsphere"
+    register: mac_addresses
+    loop:
+      - OCP-Bootstrap
+      - OCP-Master-0
+      - OCP-Master-1
+      - OCP-Master-2
+      - OCP-Infra-0
+      - OCP-Infra-1
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Update DHCP Config with correct MAC addresses
+    # TODO - Test
+    replace:
+        path: /etc/dhcp/dhcpd.conf
+        regexp: "(.*){{ item }}-mac(.*)"
+        replace: '\1{{ mac_addresses.results.item.hw_eth0.macaddress }}\2'
+    loop:
+      - OCP-Bootstrap
+      - OCP-Master-0
+      - OCP-Master-1
+      - OCP-Master-2
+      - OCP-Infra-0
+      - OCP-Infra-1
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Restart DHCP Server after config
+    systemd:
+      name: "{{ item }}"
+      state: started
+      enabled: yes
+    with_items:
+      - dhcp
+    become: yes
+    delegate_to: localhost
+    tags:
+      - vcenter
+
+  - name: Set the state of a Virtual Machines to poweron
+    vmware_guest_powerstate:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pass }}"
+      validate_certs: no
+      folder: "{{ vcenter_folder_full }}"
+      name: "{{ hostname }}"
+      state: powered-on
+    delegate_to: localhost
+    register: power_on
+    loop:
+      - OCP-Bootstrap
+      - OCP-Master-0
+      - OCP-Master-1
+      - OCP-Master-2
+      - OCP-Infra-0
+      - OCP-Infra-1
+    tags:
+      - vcenter
+
+  - name: Wait 5min for VMs to start
+    wait_for:
+      timeout: 300
+    delegate_to: localhost
+
+  - name: Complete cluster bootstrap
+    command: ./openshift-install --dir={{ install_dir }} wait-for bootstrap-complete --log-level=info
+    delegate_to: localhost
+
+  - debug:
+      msg: "Finish install by configuring the Image Registry storage and run ./openshift-install --dir={{ install_dir }} wait-for install-complete"
+
+  - debug:
+      msg: "Done!"
+
+  # - name: Patch registry deployment with emptyDir
+  #   command: oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
+  #   delegate_to: localhost
+
+  # - name: Complete cluster creation
+  #   shell: "./openshift-install --dir={{ install_dir }} wait-for install-complete"
