@@ -147,7 +147,7 @@
     tags:
       - vcenter
 
-  - name: Create a virtual machine for Bootstrap node
+  - name: Create a virtual machine for Bootstrap-node
     vmware_guest:
       hostname: "{{ vcenter_ip }}"
       username: "{{ vcenter_user }}"
@@ -162,7 +162,7 @@
         type: thin
         datastore: "{{ vcenter_datastore }}"
       hardware:
-        memory_mb: 16384
+        memory_gb: 16
         num_cpus: 4
         memory_reservation_lock: True
         version: 13 # Hardware version of virtual machine
@@ -179,7 +179,7 @@
     tags:
       - vcenter
 
-  - name: Create a virtual machine for Control-Plane nodes
+  - name: Create a virtual machine for Master-nodes
     vmware_guest:
       hostname: "{{ vcenter_ip }}"
       username: "{{ vcenter_user }}"
@@ -194,8 +194,8 @@
         type: thin
         datastore: "{{ vcenter_datastore }}"
       hardware:
-        memory_mb: 16384
-        num_cpus: 4
+        memory_gb: "{{ master_mem }}"
+        num_cpus: "{{ master_cpu }}"
         memory_reservation_lock: True
         version: 13 # Hardware version of virtual machine
       networks:
@@ -230,8 +230,8 @@
         type: thin
         datastore: "{{ vcenter_datastore }}"
       hardware:
-        memory_mb: 32768
-        num_cpus: 8
+        memory_gb: "{{ infra_mem }}"
+        num_cpus: "{{ infra_cpu }}"
         scsi: paravirtual
         memory_reservation_lock: True
         version: 13 # Hardware version of virtual machine
@@ -245,9 +245,7 @@
         - key: disk.EnableUUID
           value: "TRUE"
     register: controlplane
-    loop:
-      - 0
-      - 1
+    with_sequence: count="{{ infra_qty }}"
     tags:
       - vcenter
 

@@ -23,6 +23,13 @@ noProxy=
 ; httpsProxy=http://<username>:<pswd>@<ip>:<port>
 ; noProxy=example.com,example2.com
 
+# Node sizes
+master_cpu=4
+master_mem=16
+infra_cpu=8
+infra_mem=32
+infra_qty=2
+
 # Reserved IP Addresses
 bootstrap-ip=
 master0-ip=
