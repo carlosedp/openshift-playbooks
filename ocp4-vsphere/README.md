@@ -1,24 +1,40 @@
-# OpenShift Clients
+# OpenShift 4 over VMware vSphere install
 
-The OpenShift client `oc` simplifies working with Kubernetes and OpenShift
-clusters, offering a number of advantages over `kubectl` such as easy login,
-kube config file management, and access to developer tools. The `kubectl`
-binary is included alongside for when strict Kubernetes compliance is necessary.
+The goal of these playbooks is automate the Openshift 4 cluster deployments over vSphere platform.
 
-To learn more about OpenShift, visit [docs.openshift.com](https://docs.openshift.com)
-and select the version of OpenShift you are using.
+All tasks from creating manifests, patching, creating and converting ignition files and interacting with vCenter should be automated by the playbook.
 
-## Installing the tools
+## Prerequisites
 
-After extracting this archive, move the `oc` and `kubectl` binaries
-to a location on your PATH such as `/usr/local/bin`. Then run:
+* vSphere ESXi and vCenter 6.5 or superior
+* A datacenter created with vSphere host added to it
+* This playbook will be executed on an installer node that will serve as the HTTP and DHCP servers.
+* The installer node should have at least Ansible 2.7
 
-    oc login [API_URL]
+## Install
 
-to start a session against an OpenShift cluster. After login, run `oc` and
-`oc help` to learn more about how to get started with OpenShift.
+Edit the variables on the `inventory` file for the cluster and vCenter parameters.
 
-## License
+Add the reserved IP addresses for the Master, Bootstrap and Infra nodes.
 
-OpenShift is licensed under the Apache Public License 2.0. The source code for this
-program is [located on github](https://github.com/openshift/origin).
+The following DNS entries should have been created on the DNS Server:
+
+`api.<cluster_name>.<base_domain>` - Should point to Control-Plane LB VIP
+`api-int.<cluster_name>.<base_domain>` - Should point to Control-Plane LB VIP
+`*.apps.<cluster_name>.<base_domain>` - Should point to Infra-Node LB VIP
+`etcd-0.<cluster_name>.<base_domain>` - Should point to Control-Plane Node 0
+`etcd-1.<cluster_name>.<base_domain>` - Should point to Control-Plane Node 1
+`etcd-2.<cluster_name>.<base_domain>` - Should point to Control-Plane Node 2
+`_etcd-server-ssl._tcp.<cluster_name>.<base_domain>` - Should be three `SRV` entries pointing to each of the Control-Plane nodes.
+
+Two Load-balancer instances should be created, one for the control plane pointing to the Master-Nodes + the Bootstrap nodes. This LB VIP should be used on the DNS entries created above. Another Load-balancer instance should point to the Infra-Nodes and the VIP should match the `*.apps.cluster.domain` DNS entry.
+
+The pullsecret has been saved on the playbook dir as `pullsecret.txt`
+
+Execute the playbook with:
+
+```bash
+ansible-playbook main.yml
+```
+
+This playbook will import and run the node preparation tasks from `prepare-installer-node.yml` and then run the cluster deployment tasks from `deploy_ocp4.yml`.
