@@ -275,7 +275,7 @@
       datacenter: "{{ vcenter_datacenter }}"
       name: "{{ item }}"
       schema: "vsphere"
-    register: mac_addresses
+    register: vm_info
     loop:
       - OCP-Bootstrap
       - OCP-Master-0
@@ -291,7 +291,7 @@
     replace:
         path: /etc/dhcp/dhcpd.conf
         regexp: "(.*){{ item }}-mac(.*)"
-        replace: '\1{{ mac_addresses.results.item.hw_eth0.macaddress }}\2'
+        replace: '\1{{ vm_info.results.item.hw_eth0.macaddress }}\2'
     loop:
       - OCP-Bootstrap
       - OCP-Master-0
@@ -340,11 +340,23 @@
   - name: Complete cluster bootstrap
     command: ./openshift-install --dir={{ install_dir }} wait-for bootstrap-complete --log-level=info
 
+  - name: Remove the Bootstrap-node
+    vmware_guest:
+      hostname: "{{ vcenter_ip }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: no
+      name: OCP-Bootstrap
+      state: absent
+      uuid: "{{ vm_info.results.OCP-Bootstrap.instance_uuid }}"
+    tags:
+      - vcenter
+
   - debug:
       msg: "Finish install by configuring the Image Registry storage and run ./openshift-install --dir={{ install_dir }} wait-for install-complete"
 
   - debug:
-      msg: "Done!"
+      msg: "Cluster done! Remove the Bootstrap VM IP from the Control-Plane Load-balancer."
 
   # - name: Patch registry deployment with emptyDir
   #   command: oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'

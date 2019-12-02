@@ -36,6 +36,14 @@
       state: enabled
     delegate_to: localhost
 
+  - name: Open Firewall for dhcp access
+    become: true
+    firewalld:
+      service: dhcp
+      permanent: true
+      state: enabled
+    delegate_to: localhost
+
   - name: Restart the Firewall service
     become: true
     service:

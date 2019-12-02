@@ -38,6 +38,7 @@ master2-ip=
 infra0-ip=
 infra1-ip=
 
+# vCenter Connection and parameters
 vcenter_ip=20.20.20.1
 vcenter_user=vcenteruser
 vcenter_pwd=vcenterpwd
