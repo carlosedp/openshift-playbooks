@@ -50,6 +50,18 @@
       src: "downloads/openshift-client-{{os}}-{{openshift_version}}.tar.gz"
       dest: "."
 
+  - name: Check latest govmomi release
+    shell: "curl -s https://api.github.com/repos/vmware/govmomi/releases/latest | grep -i {{ ansible_system }} | grep amd64 | grep browser_download_url | cut -d : -f 2,3 | xargs"
+    register: json_reponse
+
+  - name: Download latest govmomi release
+    get_url:
+      url: "{{  json_reponse.stdout }}"
+      dest: downloads/govmomi.gz
+
+  - name: Unpack govmomi
+    shell: gzip -dkc downloads/govmomi.gz > govmomi && chmod +x govmomi
+
   - name: Get generated SSH Key
     slurp:
       src: "{{ install_dir }}/id_ssh_rsa.pub"
@@ -100,8 +112,6 @@
       - append-bootstrap
       - master
       - worker
-    tags:
-      - test
 
   - name: Copy bootstrap ignition to HTTP server
     copy: src="{{ install_dir }}/bootstrap.ign"
