@@ -349,6 +349,7 @@
 
   - name: Complete cluster bootstrap
     command: ./openshift-install --dir={{ install_dir }} wait-for bootstrap-complete --log-level=info
+    register: complete_out
 
   - name: Remove the Bootstrap-node
     vmware_guest:
@@ -364,6 +365,9 @@
 
   - debug:
       msg: "Finish install by configuring the Image Registry storage and run ./openshift-install --dir={{ install_dir }} wait-for install-complete"
+
+  - debug:
+      msg: "Cluster completion output: {{ complete_out.stdout }}"
 
   - debug:
       msg: "Cluster done! Remove the Bootstrap VM IP from the Control-Plane Load-balancer."

@@ -24,25 +24,62 @@
     # Define in the lb_instances array each LB instance to be created
     lb_instances: [
       {
+        # Use this for Openshift 3 and Openshift 4
         name: 'Master-https',
         port: 443,
         monitor: true,
         monitor_type: 'master',
         vip: '192.168.10.100',
-        # Add the nodes below using either the hostname OR the IP. Do not add to both.
-        node_hostnames: ['openshift-master-1.myorg.com', 'openshift-master-2.myorg.com', 'openshift-master-3.myorg.com'],
-        node_ips: ['192.168.100.200']
+        # Add the nodes below using either the hostname array OR the IP array. Do not add to both.
+        # In case of Openshift 4, add the IP or hostname of the bootstrap node too
+        node_hostnames: ['openshift-master-1.myorg.com', 'openshift-master-2.myorg.com', 'openshift-master-3.myorg.com', 'openshift-bootstrap.myorg.com'],
+        node_ips: []
         },
       {
+        # Use this for Openshift 4
+        name: 'Master-http',
+        port: 80,
+        monitor: false,
+        monitor_type: 'master',
+        vip: '192.168.10.100',
+        # Add the nodes below using either the hostname array OR the IP array. Do not add to both.
+        # In case of Openshift 4, add the IP or hostname of the bootstrap node too
+        node_hostnames: ['openshift-master-1.myorg.com', 'openshift-master-2.myorg.com', 'openshift-master-3.myorg.com', 'openshift-bootstrap.myorg.com'],
+        node_ips: []
+        },
+      {
+        # Use this for Openshift 4
+        name: 'Master-6443',
+        port: 6443,
+        monitor: false,
+        vip: '192.168.10.100',
+        # Add the nodes below using either the hostname array OR the IP array. Do not add to both.
+        # In case of Openshift 4, add the IP or hostname of the bootstrap node too
+        node_hostnames: ['openshift-master-1.myorg.com', 'openshift-master-2.myorg.com', 'openshift-master-3.myorg.com', 'openshift-bootstrap.myorg.com'],
+        node_ips: []
+        },
+      {
+        # Use this for Openshift 4
+        name: 'Master-22623',
+        port: 22623,
+        monitor: false,
+        vip: '192.168.10.100',
+        # Add the nodes below using either the hostname array OR the IP array. Do not add to both.
+        # In case of Openshift 4, add the IP or hostname of the bootstrap node too
+        node_hostnames: ['openshift-master-1.myorg.com', 'openshift-master-2.myorg.com', 'openshift-master-3.myorg.com', 'openshift-bootstrap.myorg.com'],
+        node_ips: []
+        },
+      {
+        # Use this for Openshift 3 and Openshift 4
         name: 'Infra-http',
         port: 80,
         monitor: true,
-        monitor_type: 'infra',
         vip: '192.168.10.101',
         node_hostnames: ['openshift-infra-1.myorg.com', 'openshift-infra-2.myorg.com'],
         node_ips: [],
         },
       {
+        # Use this for Openshift 3 and Openshift 4
         name: 'Infra-https',
         port: 443,
         monitor: false,
