@@ -1,6 +1,16 @@
-# Configuring F5 Big IP for OpenShift
+# Configuring F5 Big IP for OpenShift 4
 
-This playbook configures an F5 Load balancer for Openshift Master and Infra-node instances. The playbook creates the monitor, node pools and virtual server (VIP). There is also a configuration example script in case the config is done manually.
+This playbook configures an F5 Load balancer for Openshift Master and Infra-node instances. The playbook creates the monitors, node pools and virtual servers (VIP). There is also a configuration example script in case the config is done manually.
+
+You can get the node IPs from your cluster with:
+
+```sh
+# Master Nodes:
+for NODE in $(kubectl get nodes --selector='node-role.kubernetes.io/master' -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}'); do echo "Master IP: $NODE";done
+
+# Infra Nodes:
+for NODE in $(kubectl get nodes --selector='node-role.kubernetes.io/infra' -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}'); do echo "Infra IP: $NODE";done
+```
 
 The playbook requires `f5-sdk` module which can be installed with `pip3 install f5-sdk`.
 
@@ -43,18 +53,20 @@ After running, the instances are created:
 ### Master LB (Control Plane)
 
 ```bash
+# Create nodes
 create ltm node openshift-master-1.myorg.com fqdn { name openshift-master-1.myorg.com }
 create ltm node openshift-master-2.myorg.com fqdn { name openshift-master-2.myorg.com }
 create ltm node openshift-master-3.myorg.com fqdn { name openshift-master-3.myorg.com }
-create ltm node openshift-bootstrap.myorg.com fqdn { name openshift-bootstrap.myorg.com }
-create ltm monitor https ocp-master-mon defaults-from https send "GET /healthz"
-create ltm pool master.myorg.com monitor ocp-master-mon members add { openshift-master-1.myorg.com:443 openshift-master-2.myorg.com:443 openshift-master-3.myorg.com.com:443 openshift-bootstrap.myorg.com:443}
-create ltm virtual OpenShift-Master pool master.myorg.com source-address-translation { type automap } destination 192.168.10.100:443 profiles add { fastL4 }
-create ltm pool master.myorg.com monitor ocp-master-mon members add { openshift-master-1.myorg.com:80 openshift-master-2.myorg.com:80 openshift-master-3.myorg.com.com:80 openshift-bootstrap.myorg.com:80}
-create ltm virtual OpenShift-Master pool master.myorg.com source-address-translation { type automap } destination 192.168.10.100:80 profiles add { fastL4 }
-create ltm pool master.myorg.com monitor ocp-master-mon members add { openshift-master-1.myorg.com:6443 openshift-master-2.myorg.com:6443 openshift-master-3.myorg.com.com:6443 openshift-bootstrap.myorg.com:6443}
+
+# Create monitor
+create ltm monitor https ocp-master-mon defaults-from https send "GET /healthz" destination "*.6443"
+
+# Create the 6443 VS
+create ltm pool master.myorg.com monitor ocp-master-mon members add { openshift-master-1.myorg.com:6443 openshift-master-2.myorg.com:6443 openshift-master-3.myorg.com.com:6443}
 create ltm virtual OpenShift-Master pool master.myorg.com source-address-translation { type automap } destination 192.168.10.100:6443 profiles add { fastL4 }
-create ltm pool master.myorg.com monitor ocp-master-mon members add { openshift-master-1.myorg.com:22623 openshift-master-2.myorg.com:22623 openshift-master-3.myorg.com.com:22623 openshift-bootstrap.myorg.com:22623}
+
+# Create the 22623 VS
+create ltm pool master.myorg.com monitor ocp-master-mon members add { openshift-master-1.myorg.com:22623 openshift-master-2.myorg.com:22623 openshift-master-3.myorg.com.com:22623}
 create ltm virtual OpenShift-Master pool master.myorg.com source-address-translation { type automap } destination 192.168.10.100:22623 profiles add { fastL4 }
 ```
 
@@ -64,21 +76,28 @@ Where:
 **Bootstrap Node**: `openshift-bootstrap.myorg.com`  
 **Pool Name**: `master.myorg.com`  
 **Monitor Name**: `ocp-master-mon`  
-**Ports**: In this case, masters were configured to use port **443**. In case it's **8443**, update corresponding lines  
+**Ports**: In this case, masters were configured to use port **6443**.  
 **Vip IP**: `192.168.10.100` (Change according to the required VIP VLAN)  
 
-The **bootstrap node** must be removed from the IP Pool after cluster deployment is complete.
+If the installation is UPI, the **bootstrap node** must be added to the pool before installation and removed from the IP Pool after cluster deployment is complete.
 
 ### Infra Node / Router LB (One for each Infra pool)
 
 ```bash
+# Create nodes
 create ltm node openshift-infranode-1.myorg.com fqdn { name openshift-infranode-1.myorg.com }
 create ltm node openshift-infranode-2.myorg.com fqdn { name openshift-infranode-2.myorg.com }
 create ltm node openshift-infranode-3.myorg.com fqdn { name openshift-infranode-3.myorg.com }
+
+# Create monitor
 create ltm monitor http ocp-router defaults-from http send "GET /healthz" destination "*.1936"
+
+# Create HTTP VS
 create ltm pool infra.myorg.com-http monitor ocp-router members add { openshift-infranode-1.myorg.com:80 openshift-infranode-2.myorg.com:80 openshift-infranode-3.myorg.com:80 }
-create ltm pool infra.myorg.com-https monitor ocp-router members add { openshift-infranode-1.myorg.com:443 openshift-infranode-2.myorg.com:443 openshift-infranode-3.myorg.com:443 }
 create ltm virtual infra.myorg.com-http  pool infra.myorg.com-http  persist replace-all-with { source_addr } source-address-translation { type automap } destination 192.168.10.101:80 profiles add { fastL4 }
+
+# Create HTTPS VS
+create ltm pool infra.myorg.com-https monitor ocp-router members add { openshift-infranode-1.myorg.com:443 openshift-infranode-2.myorg.com:443 openshift-infranode-3.myorg.com:443 }
 create ltm virtual infra.myorg.com-https pool infra.myorg.com-https persist replace-all-with { source_addr } source-address-translation { type automap } destination 192.168.10.101:443 profiles add { fastL4 }
 ```
 
